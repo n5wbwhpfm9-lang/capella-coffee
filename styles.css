@@ -57,3 +57,12 @@
 .story-art-inner{font-family:Georgia,serif;font-style:italic;font-size:clamp(34px,4vw,55px);letter-spacing:-.04em;color:#e6c4a7}
 .story-content h2{font-family:'Libre Caslon Display',Georgia,serif;font-size:clamp(44px,5vw,68px)}
 @media(max-width:700px){.site-header{height:86px}.site-header nav{font-size:13px}.brand span{font-size:42px}.brand small{font-size:8px;letter-spacing:2px}.hero{min-height:490px;background-position:58% center}.hero h1{font-size:clamp(44px,10vw,62px)}.product-section{padding:30px 7% 55px}.product-photo{min-height:380px}.story-section{grid-template-columns:1fr}}
+
+/* Uploaded mockup imagery — replace with authentic photography before launch */
+.hero{background-image:linear-gradient(90deg,rgba(9,22,10,.95) 0%,rgba(9,22,10,.72) 42%,rgba(9,22,10,.05) 100%),url("assets/coffee-cherries.jpg")!important;background-position:center!important;background-size:cover!important}
+.product-photo{background:#f7efe5;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.product-photo:before{display:none}
+.product-image{display:block;width:100%;height:100%;min-height:440px;object-fit:cover}
+.story-art{overflow:hidden;background:#2a1a12}
+.story-image{display:block;width:100%;height:100%;min-height:330px;object-fit:cover}
+@media(max-width:700px){.hero{background-position:58% center!important}.product-image{min-height:320px;max-height:440px;object-fit:contain}.story-image{min-height:210px;max-height:280px}}
