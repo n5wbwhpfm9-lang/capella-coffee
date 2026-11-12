@@ -66,3 +66,10 @@
 .story-art{overflow:hidden;background:#2a1a12}
 .story-image{display:block;width:100%;height:100%;min-height:330px;object-fit:cover}
 @media(max-width:700px){.hero{background-position:58% center!important}.product-image{min-height:320px;max-height:440px;object-fit:contain}.story-image{min-height:210px;max-height:280px}}
+
+/* Sunrise-shaped, centered Capella wordmark */
+.site-header .brand{display:flex;flex-direction:column;align-items:center;justify-content:center;width:clamp(175px,23vw,275px);line-height:1;transform:none}
+.arched-logo{display:block;width:100%;height:auto;overflow:visible;color:#b65a3a}
+.site-header .brand small{margin-top:-12px;font-size:10px;letter-spacing:3px;white-space:nowrap}
+.hero h1{max-width:700px}
+@media(max-width:700px){.site-header .brand{width:145px}.site-header .brand small{font-size:7px;letter-spacing:1.5px;margin-top:-6px}.site-header{grid-template-columns:1fr auto 1fr}}
