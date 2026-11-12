@@ -32,3 +32,28 @@
 .story-art-inner{font-size:125px;color:#f6e9d4;font-family:Georgia,serif}
 .story-content{padding:45px 9%}.story-content h2{font-size:clamp(42px,4.7vw,65px);margin:15px 0}.story-content p{font:italic 19px/1.45 Georgia,serif}
 @media(max-width:700px){.site-header{height:88px;padding:8px 4%}.site-header nav{gap:10px;font-size:13px}.brand span{font-size:43px}.brand small{font-size:8px;letter-spacing:2px;margin-top:10px}.hero{min-height:510px;background-position:63% center}.hero-inner{padding:60px 7%}.hero h1{font-size:clamp(48px,10vw,66px)}.hero .eyebrow{font-size:11px;letter-spacing:3px}.product-section{grid-template-columns:1fr}.product-photo{min-height:390px}.bag-art{transform:scale(.77) rotate(-2deg)}.product-info{padding:35px 7% 55px}.story-section{grid-template-columns:1fr}.story-art{min-height:220px}.story-content{padding:35px 7%}}
+
+/* Match approved Capella editorial mockup */
+.site-header{height:108px;grid-template-columns:1fr auto 1fr;background:#fbf4ea;border:0}
+.brand span{font-family:Georgia,serif;font-weight:900;font-size:clamp(43px,5.6vw,70px);letter-spacing:-.065em;line-height:.86;color:#b95b3b;text-shadow:.3px .3px currentColor}
+.brand small{color:#b95b3b;font-size:11px;letter-spacing:3px;margin-top:12px}
+.site-header nav{font:18px Georgia,serif}
+.hero{min-height:510px;background-image:linear-gradient(90deg,rgba(7,19,8,.93) 0%,rgba(9,26,12,.7) 44%,rgba(7,19,8,.12) 100%),url("https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&w=1800&q=85");background-position:center;background-size:cover}
+.hero-inner{padding:55px 7.5%}
+.hero h1{font-family:'Libre Caslon Display',Georgia,serif;font-size:clamp(49px,6.5vw,87px);line-height:1.02;max-width:760px;font-weight:400}
+.hero p{font:italic 20px/1.5 Georgia,serif;max-width:480px}
+.product-section{max-width:none;padding:45px 8%;gap:7%;background:#f8f0e7;align-items:center}
+.product-photo{background:#efe0cf;min-height:510px;position:relative}
+.product-photo:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 45% 40%,#fff7e9,#e8d5c0);opacity:.85}
+.bag-art{position:relative;z-index:1;width:250px;height:350px;background:linear-gradient(170deg,#d2a879 0 32%,#bf6346 32% 100%);box-shadow:14px 15px 0 #b8a089,0 26px 30px #4e301b33;transform:rotate(-1deg)}
+.bag-art span{font-family:Georgia,serif;font-size:48px;font-weight:900;letter-spacing:-3px;color:#fff6e9}
+.bag-art small{color:#fff5e9}
+.product-info h2{font-family:'Libre Caslon Display',Georgia,serif;font-size:clamp(52px,6vw,78px);margin:14px 0 5px}
+.product-info .tasting{font:italic 24px Georgia,serif}
+.product-info>p:not(.tasting){font:18px/1.6 Georgia,serif}
+.choices span{font:17px Georgia,serif}
+.story-section{grid-template-columns:40% 60%;background:#28180f}
+.story-art{background:radial-gradient(ellipse at 15% 15%,#805333,#2d1b11 75%)}
+.story-art-inner{font-family:Georgia,serif;font-style:italic;font-size:clamp(34px,4vw,55px);letter-spacing:-.04em;color:#e6c4a7}
+.story-content h2{font-family:'Libre Caslon Display',Georgia,serif;font-size:clamp(44px,5vw,68px)}
+@media(max-width:700px){.site-header{height:86px}.site-header nav{font-size:13px}.brand span{font-size:42px}.brand small{font-size:8px;letter-spacing:2px}.hero{min-height:490px;background-position:58% center}.hero h1{font-size:clamp(44px,10vw,62px)}.product-section{padding:30px 7% 55px}.product-photo{min-height:380px}.story-section{grid-template-columns:1fr}}
