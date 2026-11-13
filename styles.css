@@ -174,3 +174,24 @@
 .custom-order p{font-size:14px;line-height:1.65;max-width:460px;margin:0 0 16px}
 .custom-order-link{display:inline-block;color:#a45137!important;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:5px;font:700 11px 'DM Sans',sans-serif;letter-spacing:1.5px}
 .custom-order-link:hover{color:#7f3d2a!important}
+
+/* Mobile header: restore Order Here (old nth-child rule hid it) */
+.site-header .cart{color:#301a10!important;-webkit-text-fill-color:#301a10;background:transparent}
+.site-header .cart span{color:#fff!important;-webkit-text-fill-color:#fff}
+@media(max-width:700px){
+ .site-header{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);padding:8px 3%;column-gap:5px}
+ .site-header nav{gap:7px}
+ .site-header .nav-right>a:nth-child(2){display:inline-flex!important}
+ .site-header .nav-right>a:first-child{display:none}
+ .site-header .nav-right{justify-content:flex-end;gap:7px}
+ .site-header .header-order{display:inline-flex!important;padding:9px 9px;font-size:9px;letter-spacing:.4px;line-height:1.1}
+ .site-header .cart{font-size:12px;white-space:nowrap;padding:4px 0}
+ .site-header .brand{width:clamp(125px,35vw,170px)}
+ .site-header .brand small{font-size:7px;letter-spacing:1.1px}
+}
+@media(max-width:390px){
+ .site-header nav:first-child a{font-size:11px}
+ .site-header .brand{width:125px}
+ .site-header .header-order{font-size:8px;padding:8px 7px}
+ .site-header .cart{font-size:11px}
+}
