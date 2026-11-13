@@ -42,7 +42,7 @@ async function ensureRecurring(db){
     const existing=await db.prepare("SELECT id FROM orders WHERE id=?").bind(id).first();
     if(!existing){
      await db.batch([
-      db.prepare("INSERT OR IGNORE INTO orders(id,source,customer_name,customer_email,status,delivery_method,notes,roast_window_date,amount_total_cents) VALUES (?,?,?,?,?,?,?,?,?)").bind(id,"manual",p.customer_name,p.customer_email,p.payment_method==="stripe"?"awaiting_payment":p.payment_status,p.delivery_method,"Recurring custom order · "+p.payment_method+(p.notes?" · "+p.notes:""),friday,p.quantity*p.unit_price_cents),
+      db.prepare("INSERT OR IGNORE INTO orders(id,source,customer_name,customer_email,status,delivery_method,notes,roast_window_date,amount_total_cents) VALUES (?,?,?,?,?,?,?,?,?)").bind(id,"manual",p.customer_name,p.customer_email,"awaiting_payment",p.delivery_method,"Recurring custom order · "+p.payment_method+(p.notes?" · "+p.notes:""),friday,p.quantity*p.unit_price_cents),
       db.prepare("INSERT INTO order_items(order_id,bag_size_oz,quantity,unit_price_cents) VALUES (?,?,?,?)").bind(id,p.bag_size_oz,p.quantity,p.unit_price_cents)
      ]);
     }
@@ -79,6 +79,7 @@ async function handle(request,env,path){
  if(request.method==="POST"&&path==="recurring"){
   const x=await request.json();const quantity=Number(x.quantity),oz=Number(x.bag_size_oz),price=Number(x.unit_price_cents),weeks=Number(x.interval_weeks);
   if(!x.customer_name||!["shipping","pickup"].includes(x.delivery_method)||![8,16].includes(oz)||![1,2,4].includes(weeks)||!Number.isInteger(quantity)||quantity<1||quantity>1000||!Number.isInteger(price)||price<0||!["venmo","cash","check","stripe","other"].includes(x.payment_method)||!["paid","awaiting_payment"].includes(x.payment_status)||!/^\d{4}-\d{2}-\d{2}$/.test(x.start_friday))return fail("Invalid recurring order");
+  if(new Date(x.start_friday+"T12:00:00Z").getUTCDay()!==5)return fail("Start date must be a Friday");
   const id=crypto.randomUUID();
   await db.prepare("INSERT INTO recurring_custom_orders(id,customer_name,customer_email,bag_size_oz,quantity,interval_weeks,start_friday,delivery_method,payment_method,payment_status,unit_price_cents,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)").bind(id,String(x.customer_name).slice(0,150),String(x.customer_email||"").slice(0,254),oz,quantity,weeks,x.start_friday,x.delivery_method,x.payment_method,x.payment_status,price,String(x.notes||"").slice(0,500)).run();
   return reply({id},201);
