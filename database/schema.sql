@@ -46,3 +46,10 @@ SELECT o.roast_window_date,
 FROM orders o JOIN order_items i ON i.order_id=o.id
 WHERE o.status='paid' AND o.fulfillment_status NOT IN ('shipped','picked_up')
 GROUP BY o.roast_window_date;
+
+-- Tracks successful branded order emails so Stripe retries do not send duplicates.
+CREATE TABLE IF NOT EXISTS order_confirmation_emails (
+  order_id TEXT PRIMARY KEY REFERENCES orders(id),
+  resend_email_id TEXT,
+  sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
