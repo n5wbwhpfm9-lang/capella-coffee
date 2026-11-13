@@ -161,3 +161,8 @@
 #cartDialog .close{position:absolute;right:17px;top:12px;border:0;background:transparent;color:#342017;font-size:30px;cursor:pointer}
 #checkoutButton:disabled{opacity:.55;cursor:wait}
 .checkout-notice{padding:18px 7%;background:#e6d5c3;color:#3b2419;text-align:center;font:600 14px 'DM Sans',sans-serif}
+
+/* Primary ordering link in the top navigation */
+.site-header .header-order{display:inline-flex;align-items:center;justify-content:center;padding:11px 17px;background:#b75b3c;color:#fff!important;border:1px solid #b75b3c;border-radius:2px;text-decoration:none;font:700 11px 'DM Sans',sans-serif;letter-spacing:1.2px;white-space:nowrap;transition:background .2s}
+.site-header .header-order:hover{background:#99472d;border-color:#99472d}
+@media(max-width:700px){.site-header .header-order{padding:9px 11px;font-size:10px;letter-spacing:.6px}}
