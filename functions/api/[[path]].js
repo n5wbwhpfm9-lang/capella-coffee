@@ -58,7 +58,6 @@ async function handle(request,env,path){
   const window=new URL(request.url).searchParams.get("window")||nextFriday();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(window))return fail("Invalid date");
   const {results:orders}=await db.prepare(`SELECT o.*,COALESCE(SUM(CASE WHEN i.bag_size_oz=16 THEN i.quantity ELSE 0 END),0) AS one_pound_bags,COALESCE(SUM(CASE WHEN i.bag_size_oz=8 THEN i.quantity ELSE 0 END),0) AS half_pound_bags FROM orders o LEFT JOIN order_items i ON i.order_id=o.id WHERE o.roast_window_date=? GROUP BY o.id ORDER BY o.created_at DESC`).bind(window).all();
-  const active=orders.filter(o=>o.status==="paid"||(o.source==="manual"&&o.status==="awaiting_payment"&&!o.id.startsWith("rec_")===false)); // manual trusted orders also count
   const pending=orders.filter(o=>o.fulfillment_status!=="shipped"&&o.fulfillment_status!=="picked_up"&&o.status!=="cancelled"&&o.status!=="refunded"&&(o.status==="paid"||o.source==="manual"));
   const one=pending.reduce((n,o)=>n+o.one_pound_bags,0),half=pending.reduce((n,o)=>n+o.half_pound_bags,0);
   const {results:plans}=await db.prepare("SELECT * FROM recurring_custom_orders ORDER BY active DESC,customer_name").all();
