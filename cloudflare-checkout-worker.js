@@ -44,6 +44,11 @@ async function savePaidOrder(env, event, details) {
   if (!["shipping","pickup"].includes(delivery)) throw Error("Unknown delivery method");
   const existing=await env.DB.prepare("SELECT id FROM stripe_events WHERE event_id=?").bind(event.id).first();
   if (existing) return;
+  const priorOrder=await env.DB.prepare("SELECT id FROM orders WHERE id=?").bind(id).first();
+  if (priorOrder) {
+    await env.DB.prepare("INSERT OR IGNORE INTO stripe_events(event_id,event_type) VALUES (?,?)").bind(event.id,event.type).run();
+    return;
+  }
   const order=env.DB.prepare(`INSERT OR IGNORE INTO orders
     (id,stripe_checkout_session_id,stripe_payment_intent_id,stripe_subscription_id,source,customer_name,customer_email,status,delivery_method,shipping_address_json,special_request,roast_window_date,amount_total_cents)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id,sessionId,paymentIntent,subscriptionId,"stripe",name,email,"paid",delivery,address?JSON.stringify(address):null,request,nextRoastFriday(created),total);
@@ -72,7 +77,7 @@ async function processStripeEvent(event,env) {
       return priceSizes[id]?{oz:priceSizes[id],quantity:line.quantity||1,unitPrice:line.price?.unit_amount||null,priceId:id}:null;
     }).filter(Boolean);
     const customer=await stripeGet("customers/"+encodeURIComponent(invoice.customer),env);
-    await savePaidOrder(env,event,{id:"invoice_"+invoice.id,subscriptionId,paymentIntent:typeof invoice.payment_intent==="string"?invoice.payment_intent:null,name:customer.name,email:invoice.customer_email||customer.email,delivery,address:customer.shipping?.address||null,items,total:invoice.amount_paid,created:invoice.created});
+    await savePaidOrder(env,event,{id:"invoice_"+invoice.id,subscriptionId,paymentIntent:typeof invoice.payment_intent==="string"?invoice.payment_intent:null,name:customer.name,email:invoice.customer_email||customer.email,delivery,address:customer.shipping?.address||null,request:subscription.metadata?.special_request||null,items,total:invoice.amount_paid,created:invoice.created});
   }
 }
 
