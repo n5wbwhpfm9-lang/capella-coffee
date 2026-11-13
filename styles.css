@@ -166,3 +166,11 @@
 .site-header .header-order{display:inline-flex;align-items:center;justify-content:center;padding:11px 17px;background:#b75b3c;color:#fff!important;border:1px solid #b75b3c;border-radius:2px;text-decoration:none;font:700 11px 'DM Sans',sans-serif;letter-spacing:1.2px;white-space:nowrap;transition:background .2s}
 .site-header .header-order:hover{background:#99472d;border-color:#99472d}
 @media(max-width:700px){.site-header .header-order{padding:9px 11px;font-size:10px;letter-spacing:.6px}}
+
+/* Custom orders: quiet editorial invitation beneath purchasing */
+.custom-order{margin-top:30px;padding:25px 0 4px;border-top:1px solid #cbb6a4}
+.custom-order .eyebrow{font-size:10px;letter-spacing:1.8px;margin-bottom:9px}
+.custom-order h3{font-family:'Libre Caslon Display',Georgia,serif;font-size:clamp(23px,2.5vw,29px);font-weight:400;line-height:1.2;margin:0 0 9px;color:#392116}
+.custom-order p{font-size:14px;line-height:1.65;max-width:460px;margin:0 0 16px}
+.custom-order-link{display:inline-block;color:#a45137!important;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:5px;font:700 11px 'DM Sans',sans-serif;letter-spacing:1.5px}
+.custom-order-link:hover{color:#7f3d2a!important}
