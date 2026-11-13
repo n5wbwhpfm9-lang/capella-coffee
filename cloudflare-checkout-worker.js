@@ -29,7 +29,7 @@ export default {
   params.set("cancel_url",SHOP+"?checkout=cancelled");
   params.set("allow_promotion_codes","true");
   params.set("billing_address_collection","auto");
-  params.set("customer_creation",subscription?"always":"always");
+  if(!subscription) params.set("customer_creation","always");
   params.set("metadata[delivery]",delivery);
   params.set("metadata[bag_size]",size);
   params.set("metadata[frequency]",frequency);
