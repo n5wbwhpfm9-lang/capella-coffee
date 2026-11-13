@@ -28,6 +28,12 @@ export default {
   params.set("success_url",SHOP+"?checkout=success");
   params.set("cancel_url",SHOP+"?checkout=cancelled");
   params.set("allow_promotion_codes","true");
+  params.set("custom_fields[0][key]","special_request");
+  params.set("custom_fields[0][label][type]","custom");
+  params.set("custom_fields[0][label][custom]","Special requests (optional)");
+  params.set("custom_fields[0][type]","text");
+  params.set("custom_fields[0][optional]","true");
+  params.set("custom_fields[0][text][maximum_length]","255");
   params.set("billing_address_collection","auto");
   if(!subscription) params.set("customer_creation","always");
   params.set("metadata[delivery]",delivery);
