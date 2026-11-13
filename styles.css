@@ -149,3 +149,15 @@
 .newsletter .ml-embedded iframe[src*="recaptcha"],.newsletter .ml-embedded iframe[src*="hcaptcha"]{max-width:100%!important}
 .newsletter .ml-embedded .ml-form-embedSubmit button{display:block!important;max-width:100%!important;margin:12px 0 0!important}
 @media(max-width:380px){.newsletter .ml-embedded .g-recaptcha{transform:scale(.88);transform-origin:center top;margin-bottom:-8px!important}}
+
+/* Checkout dialog */
+#cartDialog{max-width:min(94vw,520px);width:100%;padding:38px;border:1px solid #b9a18b;border-radius:5px;background:#f7efe4;color:#342017;box-shadow:0 20px 70px #1b100c55}
+#cartDialog::backdrop{background:#24130dc2}
+#cartDialog h2{font-family:'Libre Caslon Display',Georgia,serif;font-size:38px;margin:8px 0 16px}
+#cartDialog .delivery-choice{border:0;padding:0;margin:25px 0 18px;display:grid;gap:12px}
+#cartDialog .delivery-choice legend{font:700 11px 'DM Sans',sans-serif;letter-spacing:1.4px;margin-bottom:12px}
+#cartDialog .delivery-choice label{display:flex;gap:10px;align-items:center;font:14px 'DM Sans',sans-serif}
+#cartDialog .delivery-choice input{accent-color:#b75b3c}
+#cartDialog .close{position:absolute;right:17px;top:12px;border:0;background:transparent;color:#342017;font-size:30px;cursor:pointer}
+#checkoutButton:disabled{opacity:.55;cursor:wait}
+.checkout-notice{padding:18px 7%;background:#e6d5c3;color:#3b2419;text-align:center;font:600 14px 'DM Sans',sans-serif}
