@@ -98,7 +98,7 @@ async function handle(request,env,path){
   const window=new URL(request.url).searchParams.get("window")||productionFriday();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(window))return fail("Invalid date");
   const {results:orders}=await db.prepare(`SELECT o.*,COALESCE(SUM(CASE WHEN i.bag_size_oz=16 THEN i.quantity ELSE 0 END),0) AS one_pound_bags,COALESCE(SUM(CASE WHEN i.bag_size_oz=8 THEN i.quantity ELSE 0 END),0) AS half_pound_bags FROM orders o LEFT JOIN order_items i ON i.order_id=o.id WHERE (o.roast_window_date=? OR (o.roast_window_date<? AND o.fulfillment_status NOT IN ('shipped','picked_up') AND o.status NOT IN ('cancelled','refunded'))) GROUP BY o.id ORDER BY o.roast_window_date ASC,o.created_at DESC`).bind(window,window).all();
-  const currentOrders=orders.filter(o=>o.roast_window_date===window);
+  const currentOrders=orders.filter(o=>o.roast_window_date===window&&o.fulfillment_status!=="shipped"&&o.fulfillment_status!=="picked_up"&&o.status!=="cancelled"&&o.status!=="refunded");
   const outstanding=orders.filter(o=>o.roast_window_date<window);
   const pending=currentOrders.filter(o=>o.roast_window_date===window&&o.fulfillment_status!=="shipped"&&o.fulfillment_status!=="picked_up"&&o.status!=="cancelled"&&o.status!=="refunded"&&(o.status==="paid"||o.source==="manual"));
   const one=pending.reduce((n,o)=>n+o.one_pound_bags,0),half=pending.reduce((n,o)=>n+o.half_pound_bags,0);
