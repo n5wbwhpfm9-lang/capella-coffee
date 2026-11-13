@@ -120,3 +120,21 @@
 .ethiopia-pin{fill:#b75b3c;stroke:#fffaf1;stroke-width:2}
 .map-label{fill:#8e442c;font:700 13px 'DM Sans',sans-serif;letter-spacing:1.4px}
 .origin-marker{display:none}
+
+/* Capella newsletter: make MailerLite's embedded form match the storefront */
+.newsletter{background:#ead8c6;padding:76px 20px 82px}
+.newsletter>.eyebrow{color:#9e583e}
+.newsletter>h2{font-family:'Libre Caslon Display',Georgia,serif;color:#301a10}
+.newsletter>.ml-embedded{max-width:580px;margin:26px auto 0;text-align:left}
+.newsletter .ml-form-embedContainer,.newsletter .ml-form-embedWrapper,.newsletter .ml-form-embedBody,.newsletter .ml-form-embedContent,.newsletter .ml-form-embedSubmit,.newsletter .ml-form-successBody{background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important}
+.newsletter .ml-form-embedWrapper{max-width:100%!important;width:100%!important}
+.newsletter .ml-form-embedBody{padding:0!important}
+.newsletter .ml-form-embedContent h4,.newsletter .ml-form-embedContent p,.newsletter .ml-form-embedContent h2{display:none!important}
+.newsletter .ml-form-fieldRow{margin:0 0 10px!important}
+.newsletter .ml-form-fieldRow input,.newsletter .ml-form-embedBody input[type="email"]{width:100%!important;background:#fffaf4!important;color:#301a10!important;border:1px solid #ad9481!important;border-radius:2px!important;padding:16px!important;font:16px 'DM Sans',sans-serif!important;height:auto!important;box-shadow:none!important}
+.newsletter .ml-form-embedSubmit button,.newsletter .ml-form-embedSubmit button.primary{width:100%!important;background:#b75b3c!important;color:#fff!important;border:0!important;border-radius:2px!important;padding:16px 22px!important;min-height:50px!important;font:700 12px 'DM Sans',sans-serif!important;letter-spacing:2px!important;text-transform:uppercase!important;box-shadow:none!important}
+.newsletter .ml-form-embedSubmit button:hover{background:#99472d!important}
+.newsletter .ml-form-embedSubmit{margin:0!important;padding:0!important}
+.newsletter .ml-form-checkboxRow,.newsletter .ml-form-interestGroupsRow{font:13px/1.5 'DM Sans',sans-serif!important}
+.newsletter .ml-form-successContent h4,.newsletter .ml-form-successContent p{color:#301a10!important}
+@media(max-width:700px){.newsletter>.ml-embedded{max-width:100%}.newsletter{padding:56px 7% 65px}}
