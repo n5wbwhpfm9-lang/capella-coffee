@@ -6,6 +6,8 @@ const PRICES = {
   "0.5": { once:"price_1Ub9RvDaBLaitTQvJzn0oJ5o",weekly:"price_1Ub9RvDaBLaitTQvbwSj5Jrg",biweekly:"price_1Ub9RuDaBLaitTQvtirxmCMZ",monthly:"price_1Ub9RuDaBLaitTQvKOmTfxKZ" },
   "1": { once:"price_1Ub9RvDaBLaitTQv6yXi4TMM",weekly:"price_1Ub9RvDaBLaitTQvKAOJKqjd",biweekly:"price_1Ub9RuDaBLaitTQvxveuHpu2",monthly:"price_1Ub9RvDaBLaitTQv3KPPCcmm" }
 };
+// Private church payment-link price: $48 per 2 weeks = three 1-lb bags at $16 each.
+const CHURCH_PRICE = "price_1UbT8XDaBLaitTQvJebMg5wr";
 const SHIPPING_RATE = "shr_1Ub9svDaBLaitTQvjxVnZilj";
 const json=(obj,status=200)=>new Response(JSON.stringify(obj),{status,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":SITE,"Vary":"Origin","Cache-Control":"no-store"}});
 
@@ -73,12 +75,14 @@ async function processStripeEvent(event,env) {
     const subscription=await stripeGet("subscriptions/"+encodeURIComponent(subscriptionId),env);
     const delivery=subscription.metadata?.delivery;
     const invoiceLines=await stripeGet("invoices/"+encodeURIComponent(invoice.id)+"/lines?limit=100",env);
+    const churchLine=invoiceLines.data.some(line=>(line.price?.id||line.pricing?.price_details?.price)===CHURCH_PRICE);
     const items=invoiceLines.data.map(line=>{
       const id=line.price?.id||line.pricing?.price_details?.price;
+      if(id===CHURCH_PRICE)return {oz:16,quantity:3*(line.quantity||1),unitPrice:1600,priceId:id};
       return priceSizes[id]?{oz:priceSizes[id],quantity:line.quantity||1,unitPrice:line.price?.unit_amount||null,priceId:id}:null;
     }).filter(Boolean);
     const customer=await stripeGet("customers/"+encodeURIComponent(invoice.customer),env);
-    await savePaidOrder(env,event,{id:"invoice_"+invoice.id,subscriptionId,paymentIntent:typeof invoice.payment_intent==="string"?invoice.payment_intent:null,name:customer.name,email:invoice.customer_email||customer.email,delivery,address:customer.shipping?.address||null,request:subscription.metadata?.special_request||null,items,total:invoice.amount_paid,created:invoice.created});
+    await savePaidOrder(env,event,{id:"invoice_"+invoice.id,subscriptionId,paymentIntent:typeof invoice.payment_intent==="string"?invoice.payment_intent:null,name:customer.name,email:invoice.customer_email||customer.email,delivery:churchLine?"pickup":delivery,address:customer.shipping?.address||null,request:subscription.metadata?.special_request||null,items,total:invoice.amount_paid,created:invoice.created});
     await sendOrderConfirmation(env,"invoice_"+invoice.id);
   }
 }
