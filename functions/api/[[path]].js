@@ -7,7 +7,7 @@ const paymentStatuses=["awaiting_payment","paid","cancelled","refunded"];
 function nextFriday(date=new Date()){
  const p=Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).map(x=>[x.type,x.value]));
  const d=new Date(Date.UTC(+p.year,+p.month-1,+p.day));let n=(5-d.getUTCDay()+7)%7;
- if(n===0&&(+p.hour>=10))n=7;
+ if(n===0&&(+p.hour>=15))n=7;
  d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);
 }
 // Dashboard production window changes on Sunday at midnight Pacific,
