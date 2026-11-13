@@ -112,3 +112,11 @@
 .regional-map iframe{height:330px;min-height:330px}
 .origin-marker{position:static;transform:none;margin:12px auto 18px}
 @media(max-width:700px){.africa-overview{height:320px}.africa-overview svg{height:270px}.origin-map{min-height:350px}}
+
+/* Refined editorial Africa origin map */
+.origin-map{background:#eee4d5}
+.africa-overview{background:radial-gradient(ellipse at 50% 48%,#f3ebdf 0%,#e6d9c8 90%)}
+.africa-shape{fill:#b8a58b;stroke:#8d7960;stroke-width:1.8;stroke-linejoin:round}
+.ethiopia-pin{fill:#b75b3c;stroke:#fffaf1;stroke-width:2}
+.map-label{fill:#8e442c;font:700 13px 'DM Sans',sans-serif;letter-spacing:1.4px}
+.origin-marker{display:none}
