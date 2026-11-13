@@ -12,22 +12,27 @@ function nextFriday(date=new Date()){
 }
 function b64(s){return Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0))}
 async function verify(request,env){
+ const reject=reason=>({ok:false,reason});
  const token=request.headers.get("Cf-Access-Jwt-Assertion");
- if(!token||!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD||!env.ADMIN_EMAILS)return false;
- const chunks=token.split(".");if(chunks.length!==3)return false;
+ if(!token)return reject("missing_access_assertion");
+ if(!env.ACCESS_TEAM_DOMAIN||!env.ACCESS_AUD||!env.ADMIN_EMAILS)return reject("missing_server_configuration");
+ const chunks=token.split(".");if(chunks.length!==3)return reject("invalid_token_format");
  try{
   const header=JSON.parse(new TextDecoder().decode(b64(chunks[0])));
   const body=JSON.parse(new TextDecoder().decode(b64(chunks[1])));
   const domain=env.ACCESS_TEAM_DOMAIN.replace(/^https?:\/\//,"").replace(/\/$/,"");
-  if(header.alg!=="RS256"||!header.kid||body.iss!=="https://"+domain||!Array.isArray(body.aud)||!body.aud.includes(env.ACCESS_AUD)||body.exp<=Date.now()/1000||body.nbf>Date.now()/1000)return false;
-  if(!env.ADMIN_EMAILS.split(",").map(x=>x.trim().toLowerCase()).includes(String(body.email||"").toLowerCase()))return false;
+  if(header.alg!=="RS256"||!header.kid)return reject("unsupported_token_signature");
+  if(body.iss!=="https://"+domain)return reject("issuer_mismatch");
+  if(![].concat(body.aud||[]).includes(env.ACCESS_AUD.trim()))return reject("audience_mismatch");
+  if(!body.exp||body.exp<=Date.now()/1000||(body.nbf&&body.nbf>Date.now()/1000))return reject("token_expired_or_not_yet_valid");
+  if(!env.ADMIN_EMAILS.split(",").map(x=>x.trim().toLowerCase()).includes(String(body.email||"").toLowerCase()))return reject("email_not_authorized");
   const response=await fetch("https://"+domain+"/cdn-cgi/access/certs");
-  if(!response.ok)return false;
+  if(!response.ok)return reject("certificates_unavailable");
   const jwks=await response.json();const jwk=jwks.keys.find(x=>x.kid===header.kid);
-  if(!jwk)return false;
+  if(!jwk)return reject("signing_key_not_found");
   const key=await crypto.subtle.importKey("jwk",jwk,{name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["verify"]);
-  return crypto.subtle.verify("RSASSA-PKCS1-v1_5",key,b64(chunks[2]),new TextEncoder().encode(chunks[0]+"."+chunks[1]));
- }catch(e){console.error("Access verification failed",e);return false}
+  return (await crypto.subtle.verify("RSASSA-PKCS1-v1_5",key,b64(chunks[2]),new TextEncoder().encode(chunks[0]+"."+chunks[1])))?{ok:true}:reject("invalid_signature");
+ }catch(e){console.error("Access verification failed",e);return reject("verification_exception")}
 }
 const fail=(msg,s=400)=>reply({error:msg},s);
 async function ensureRecurring(db){
@@ -108,7 +113,8 @@ async function handle(request,env,path){
 }
 export async function onRequest(context){
  const {request,env}=context;
- if(!await verify(request,env))return fail("Unauthorized: verify Access settings and admin email",401);
+ const auth=await verify(request,env);
+ if(!auth.ok)return fail("Unauthorized: "+auth.reason,401);
  try{return await handle(request,env,context.params.path?.join("/")||"")}
  catch(e){console.error("Capella admin API error",e);return fail("Unable to load or update orders",500)}
 }
