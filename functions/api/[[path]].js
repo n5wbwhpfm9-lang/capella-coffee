@@ -10,6 +10,15 @@ function nextFriday(date=new Date()){
  if(n===0&&(+p.hour>=10))n=7;
  d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);
 }
+// Dashboard production window changes on Sunday at midnight Pacific,
+// independent of the Friday 10 AM customer ordering cutoff.
+function productionFriday(date=new Date()){
+ const p=Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"}).formatToParts(date).map(x=>[x.type,x.value]));
+ const d=new Date(Date.UTC(+p.year,+p.month-1,+p.day));
+ const offset=(5-d.getUTCDay()+7)%7;
+ d.setUTCDate(d.getUTCDate()+offset);
+ return d.toISOString().slice(0,10);
+}
 function b64(s){return Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0))}
 async function verify(request,env){
  const reject=reason=>({ok:false,reason});
@@ -36,7 +45,7 @@ async function verify(request,env){
 }
 const fail=(msg,s=400)=>reply({error:msg},s);
 async function ensureRecurring(db){
- const now=nextFriday();const until=new Date(now+"T12:00:00Z");until.setUTCDate(until.getUTCDate()+70);const limit=until.toISOString().slice(0,10);
+ const now=productionFriday();const until=new Date(now+"T12:00:00Z");until.setUTCDate(until.getUTCDate()+70);const limit=until.toISOString().slice(0,10);
  const {results:plans}=await db.prepare("SELECT * FROM recurring_custom_orders WHERE active=1 AND start_friday<=?").bind(limit).all();
  for(const p of plans){
   let day=new Date(p.start_friday+"T12:00:00Z");
@@ -86,13 +95,15 @@ async function handle(request,env,path){
  }
  if(request.method==="GET"&&path==="dashboard"){
   await ensureRecurring(db);
-  const window=new URL(request.url).searchParams.get("window")||nextFriday();
+  const window=new URL(request.url).searchParams.get("window")||productionFriday();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(window))return fail("Invalid date");
   const {results:orders}=await db.prepare(`SELECT o.*,COALESCE(SUM(CASE WHEN i.bag_size_oz=16 THEN i.quantity ELSE 0 END),0) AS one_pound_bags,COALESCE(SUM(CASE WHEN i.bag_size_oz=8 THEN i.quantity ELSE 0 END),0) AS half_pound_bags FROM orders o LEFT JOIN order_items i ON i.order_id=o.id WHERE (o.roast_window_date=? OR (o.roast_window_date<? AND o.fulfillment_status NOT IN ('shipped','picked_up') AND o.status NOT IN ('cancelled','refunded'))) GROUP BY o.id ORDER BY o.roast_window_date ASC,o.created_at DESC`).bind(window,window).all();
-  const pending=orders.filter(o=>o.roast_window_date===window&&o.fulfillment_status!=="shipped"&&o.fulfillment_status!=="picked_up"&&o.status!=="cancelled"&&o.status!=="refunded"&&(o.status==="paid"||o.source==="manual"));
+  const currentOrders=orders.filter(o=>o.roast_window_date===window);
+  const outstanding=orders.filter(o=>o.roast_window_date<window);
+  const pending=currentOrders.filter(o=>o.roast_window_date===window&&o.fulfillment_status!=="shipped"&&o.fulfillment_status!=="picked_up"&&o.status!=="cancelled"&&o.status!=="refunded"&&(o.status==="paid"||o.source==="manual"));
   const one=pending.reduce((n,o)=>n+o.one_pound_bags,0),half=pending.reduce((n,o)=>n+o.half_pound_bags,0);
   const {results:plans}=await db.prepare("SELECT * FROM recurring_custom_orders ORDER BY active DESC,customer_name").all();
-  return reply({window,summary:{one_pound_bags:one,half_pound_bags:half,total_bags:one+half,total_roasted_pounds:one+half/2},orders,plans});
+  return reply({window,summary:{one_pound_bags:one,half_pound_bags:half,total_bags:one+half,total_roasted_pounds:one+half/2},orders:currentOrders,outstanding,plans});
  }
  if(request.method==="POST"&&path==="orders"){
   const x=await request.json();
