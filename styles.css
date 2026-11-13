@@ -138,3 +138,14 @@
 .newsletter .ml-form-checkboxRow,.newsletter .ml-form-interestGroupsRow{font:13px/1.5 'DM Sans',sans-serif!important}
 .newsletter .ml-form-successContent h4,.newsletter .ml-form-successContent p{color:#301a10!important}
 @media(max-width:700px){.newsletter>.ml-embedded{max-width:100%}.newsletter{padding:56px 7% 65px}}
+
+/* MailerLite layout repair: don't apply the old custom-form flex rules */
+.newsletter .ml-embedded form,.newsletter .ml-form-embedWrapper form{display:block!important;width:100%!important;max-width:100%!important;margin:0!important;gap:0!important}
+.newsletter .ml-embedded .ml-form-formContent,.newsletter .ml-embedded .ml-form-fieldRow,.newsletter .ml-embedded .ml-field-group,.newsletter .ml-embedded .ml-form-embedBody,.newsletter .ml-embedded .ml-form-embedSubmit{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+.newsletter .ml-embedded input[type="email"],.newsletter .ml-embedded input[type="text"]{display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;padding:16px 18px!important;min-height:52px!important}
+.newsletter .ml-embedded .ml-form-recaptcha,.newsletter .ml-embedded .g-recaptcha,.newsletter .ml-embedded .grecaptcha-badge{max-width:100%!important}
+.newsletter .ml-embedded .ml-form-recaptcha{display:flex!important;justify-content:center!important;margin:14px auto!important;overflow:visible!important}
+.newsletter .ml-embedded .g-recaptcha>div{max-width:100%!important;margin:0 auto!important}
+.newsletter .ml-embedded iframe[src*="recaptcha"],.newsletter .ml-embedded iframe[src*="hcaptcha"]{max-width:100%!important}
+.newsletter .ml-embedded .ml-form-embedSubmit button{display:block!important;max-width:100%!important;margin:12px 0 0!important}
+@media(max-width:380px){.newsletter .ml-embedded .g-recaptcha{transform:scale(.88);transform-origin:center top;margin-bottom:-8px!important}}
