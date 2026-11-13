@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Capella · Roastery Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Libre+Caslon+Display&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#39241b;--muted:#856d5f;--cream:#f8f2e9;--sand:#e9ddce;--terracotta:#b75b3c;--line:#d9c8b7}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:20px clamp(20px,5vw,80px);border-bottom:1px solid var(--line);background:#f3e8da}
+.logo{font:42px 'Libre Caslon Display',Georgia,serif;color:#8b452f;line-height:1}.logo small{display:block;font:700 9px 'DM Sans',sans-serif;letter-spacing:2.5px;text-align:center;margin-top:4px}
+header .right{font-size:12px;color:var(--muted);text-align:right}
+main{max-width:1160px;margin:auto;padding:44px 22px 90px}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:2.2px;color:#9a563e}
+h1,h2,h3{font-family:'Libre Caslon Display',Georgia,serif;font-weight:400}h1{font-size:clamp(38px,5vw,58px);margin:8px 0 8px}h2{font-size:32px;margin:0 0 10px}h3{font-size:23px;margin:0}
+.sub{color:var(--muted);font-size:14px;line-height:1.6}.intro{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:32px}
+.tag{display:inline-block;border:1px solid #d3b69f;color:#8b4e39;border-radius:30px;padding:8px 12px;font-size:11px;font-weight:700}
+.panel{border:1px solid var(--line);background:#fffaf4;border-radius:5px;padding:clamp(20px,3vw,32px);margin-bottom:22px}
+.panel-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:23px}.panel-heading p{margin:5px 0 0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.stat{background:#f1e5d7;padding:24px 12px;text-align:center;border-radius:3px}
+.stat strong{font:clamp(31px,4vw,48px) 'Libre Caslon Display',Georgia,serif;display:block}
+.stat span{font-size:11px;color:#725d50;letter-spacing:.4px}
+.columns{display:grid;grid-template-columns:1.35fr 1fr;gap:22px}
+button,.button{border:0;background:var(--terracotta);color:white;padding:13px 18px;font:700 11px 'DM Sans',sans-serif;letter-spacing:1.2px;cursor:pointer;border-radius:2px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}th{font-size:10px;letter-spacing:1.1px;color:var(--muted);font-weight:700;padding:12px 8px;border-bottom:1px solid var(--line)}td{padding:15px 8px;border-bottom:1px solid #e9ddd1}td:last-child{text-align:right}.empty{text-align:center!important;color:var(--muted);padding:30px 8px}
+.steps{display:grid;gap:14px}.step{display:flex;gap:12px;align-items:center;padding-bottom:12px;border-bottom:1px solid #eadfd3}.step .dot{background:#ebd7c6;color:#8e4b34;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px}.step span{font-size:13px}
+.notice{border-left:3px solid var(--terracotta);background:#f2e6d8;padding:18px 20px;font-size:13px;line-height:1.7;margin:22px 0}
+.footer{font-size:12px;color:var(--muted);margin-top:26px}
+@media(max-width:760px){.intro{align-items:start;flex-direction:column}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.columns{grid-template-columns:1fr}.panel-heading{align-items:start;flex-direction:column}main{padding-top:32px}}
+</style></head>
+<body><header><div class="logo">Capella<small>COFFEE ROASTERS</small></div><div class="right">ROASTERY OPERATIONS<br><strong>PRIVATE DASHBOARD · DESIGN PREVIEW</strong></div></header>
+<main><div class="intro"><div><div class="eyebrow">CAPELLA / PRODUCTION</div><h1>Good morning, Jadyn.</h1><div class="sub">Everything you need for the next Friday–Saturday roast.</div></div><div class="tag">Friday 10 AM PT cutoff</div></div>
+<div class="notice"><strong>Design preview only.</strong> This page intentionally contains no customer records. Live orders, custom-order entry, and fulfillment controls will be enabled after we secure admin access and connect the database.</div>
+<section class="panel"><div class="panel-heading"><div><div class="eyebrow">PRODUCTION OVERVIEW</div><h2>This Week's Roast</h2><p class="sub">Paid orders scheduled for the next roasting window</p></div><div class="tag">Awaiting live connection</div></div>
+<div class="stats"><div class="stat"><strong>—</strong><span>1 LB BAGS</span></div><div class="stat"><strong>—</strong><span>½ LB BAGS</span></div><div class="stat"><strong>—</strong><span>TOTAL BAGS</span></div><div class="stat"><strong>—</strong><span>TOTAL ROASTED LBS</span></div></div></section>
+<div class="columns"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">CUSTOMERS & FULFILLMENT</div><h2>Orders</h2><p class="sub">Website orders, subscriptions, and custom orders in one place.</p></div><button disabled>+ ADD ORDER</button></div><div class="table-wrap"><table><thead><tr><th>CUSTOMER</th><th>COFFEE</th><th>DELIVERY</th><th>STATUS</th></tr></thead><tbody><tr><td class="empty" colspan="4">Connect the secure order API to display paid orders.</td></tr></tbody></table></div></section>
+<section class="panel"><div class="eyebrow">ROASTERY WORKFLOW</div><h2>From order to cup</h2><div class="steps"><div class="step"><div class="dot">1</div><span><strong>Paid</strong> · Ready for the roasting queue</span></div><div class="step"><div class="dot">2</div><span><strong>Roasted</strong> · Friday–Saturday batch</span></div><div class="step"><div class="dot">3</div><span><strong>Packed</strong> · Bagged and labeled</span></div><div class="step"><div class="dot">4</div><span><strong>Shipped / Picked up</strong> · Fulfilled</span></div></div><p class="sub">Special requests and manual orders will appear alongside regular purchases.</p></section></div>
+<p class="footer">Capella Coffee · Yakima, Washington · Private roastery dashboard design preview</p></main></body></html>
