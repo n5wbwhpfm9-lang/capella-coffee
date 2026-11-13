@@ -1,7 +1,7 @@
 // Capella Coffee Stripe Checkout Worker
 // Set STRIPE_SECRET_KEY as an encrypted Cloudflare Worker secret.
-const SITE = "https://n5wbwhpfm9-lang.github.io";
-const SHOP = SITE + "/capella-coffee/";
+const SITE = "https://copacapella.com";
+const SHOP = SITE + "/";
 const PRICES = {
   "0.5": { once:"price_1Ub9RvDaBLaitTQvJzn0oJ5o",weekly:"price_1Ub9RvDaBLaitTQvbwSj5Jrg",biweekly:"price_1Ub9RuDaBLaitTQvtirxmCMZ",monthly:"price_1Ub9RuDaBLaitTQvKOmTfxKZ" },
   "1": { once:"price_1Ub9RvDaBLaitTQv6yXi4TMM",weekly:"price_1Ub9RvDaBLaitTQvKAOJKqjd",biweekly:"price_1Ub9RuDaBLaitTQvxveuHpu2",monthly:"price_1Ub9RvDaBLaitTQv3KPPCcmm" }
