@@ -42,7 +42,7 @@ async function savePaidOrder(env, event, details) {
   const {id, sessionId=null, paymentIntent=null, subscriptionId=null, name=null, email=null, delivery, address=null, request=null, items, total=null, created}=details;
   if (!items.length) throw Error("No coffee line items found for paid order");
   if (!["shipping","pickup"].includes(delivery)) throw Error("Unknown delivery method");
-  const existing=await env.DB.prepare("SELECT id FROM stripe_events WHERE event_id=?").bind(event.id).first();
+  const existing=await env.DB.prepare("SELECT event_id FROM stripe_events WHERE event_id=?").bind(event.id).first();
   if (existing) return;
   const priorOrder=await env.DB.prepare("SELECT id FROM orders WHERE id=?").bind(id).first();
   if (priorOrder) {
