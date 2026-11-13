@@ -63,6 +63,7 @@ async function processStripeEvent(event,env) {
     const items=lines.data.filter(x=>priceSizes[x.price?.id]).map(x=>({oz:priceSizes[x.price.id],quantity:x.quantity,unitPrice:x.price.unit_amount,priceId:x.price.id}));
     const request=session.custom_fields?.find(x=>x.key==="special_request")?.text?.value||null;
     await savePaidOrder(env,event,{id:"checkout_"+session.id,sessionId:session.id,paymentIntent:session.payment_intent, name:session.customer_details?.name,email:session.customer_details?.email,delivery:session.metadata?.delivery,address:session.collected_information?.shipping_details?.address||session.shipping_details?.address,request,items,total:session.amount_total,created:session.created});
+    await sendOrderConfirmation(env,"checkout_"+session.id);
   }
   if (event.type==="invoice.paid") {
     const invoice=event.data.object;
@@ -78,7 +79,33 @@ async function processStripeEvent(event,env) {
     }).filter(Boolean);
     const customer=await stripeGet("customers/"+encodeURIComponent(invoice.customer),env);
     await savePaidOrder(env,event,{id:"invoice_"+invoice.id,subscriptionId,paymentIntent:typeof invoice.payment_intent==="string"?invoice.payment_intent:null,name:customer.name,email:invoice.customer_email||customer.email,delivery,address:customer.shipping?.address||null,request:subscription.metadata?.special_request||null,items,total:invoice.amount_paid,created:invoice.created});
+    await sendOrderConfirmation(env,"invoice_"+invoice.id);
   }
+}
+
+
+function escapeHtml(value) {
+ return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+async function sendOrderConfirmation(env, orderId) {
+ if(!env.RESEND_API_KEY) throw Error("RESEND_API_KEY is missing");
+ const already=await env.DB.prepare("SELECT order_id FROM order_confirmation_emails WHERE order_id=?").bind(orderId).first();
+ if(already) return;
+ const order=await env.DB.prepare("SELECT * FROM orders WHERE id=?").bind(orderId).first();
+ if(!order||order.status!=="paid"||!order.customer_email) throw Error("Paid order or customer email missing");
+ const {results:items}=await env.DB.prepare("SELECT bag_size_oz,quantity FROM order_items WHERE order_id=?").bind(orderId).all();
+ if(!items.length) throw Error("No items for order email");
+ const lines=items.map(i=>i.quantity+" × "+(i.bag_size_oz===16?"1-pound":"½-pound")+" bag"+(i.quantity===1?"":"s"));
+ const itemsHtml=lines.map(x=>"<li>"+escapeHtml(x)+"</li>").join("");
+ const pickup=order.delivery_method==="pickup";
+ const fulfillment=pickup?"We'll email you when your coffee is ready for pickup in Yakima.":"We'll email you when your coffee has shipped.";
+ const greeting=order.customer_name?"Hi "+escapeHtml(order.customer_name.split(" ")[0])+",":"Hello,";
+ const money=order.amount_total_cents==null?"":("<p><strong>Amount paid:</strong> $"+(order.amount_total_cents/100).toFixed(2)+"</p>");
+ const html=`<div style="max-width:580px;margin:auto;padding:35px 22px;font-family:Georgia,serif;color:#382318;background:#faf4eb"><h1 style="font-size:38px;color:#9f4e35">Capella</h1><p style="font:700 11px Arial,sans-serif;letter-spacing:2px">FRESHLY ROASTED · YAKIMA BORN</p><h2>Your coffee order is confirmed!</h2><p>${greeting}</p><p>Thanks for ordering Capella Coffee. We're excited to roast something good for you.</p><h3>Your order</h3><ul>${itemsHtml}</ul>${money}<p><strong>Delivery:</strong> ${pickup?"Free Yakima pickup":"USPS Priority Mail"}</p><h3>Our roasting schedule</h3><p>We roast fresh coffee in small batches each Friday and Saturday. Orders placed before Friday at 10:00 AM Pacific are scheduled for that week's roasting window. Orders placed at or after the cutoff are scheduled for the following week.</p><p>${fulfillment}</p><p>Thanks for supporting our little Yakima roastery!</p><p><strong>Capella Coffee</strong><br>Freshly roasted. Yakima born.<br><a href="mailto:hello@copacapella.com">hello@copacapella.com</a></p></div>`;
+ const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json","Idempotency-Key":"capella-confirm-"+orderId},body:JSON.stringify({from:"Capella Coffee <orders@copacapella.com>",to:[order.customer_email],reply_to:"hello@copacapella.com",subject:"Your Capella Coffee order is confirmed!",html})});
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok) throw Error("Resend email failed ("+response.status+"): "+(result.message||"Unknown error"));
+ await env.DB.prepare("INSERT OR IGNORE INTO order_confirmation_emails(order_id,resend_email_id) VALUES (?,?)").bind(orderId,result.id||null).run();
 }
 
 export default {
