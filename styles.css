@@ -226,3 +226,6 @@
  .site-header .cart span{flex:none!important}
  .site-header .nav-right>a:first-child{display:none!important}
 }
+
+/* Keep the entire Africa map panel on one continuous background. */
+.origin-map,.africa-overview{background:#eee4d5}
