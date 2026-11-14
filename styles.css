@@ -252,3 +252,8 @@
 
 /* Give the story's closing thought the prominence of a true editorial heading. */
 .story-conclusion h3{font-family:'Libre Caslon Display',Georgia,serif;font-size:clamp(34px,3.8vw,52px);line-height:1.12;letter-spacing:-.025em;color:#f2c0a4;margin:0 0 19px}
+
+/* Show the complete goat artwork rather than cropping it to fill the taller story column. */
+.story-art{display:flex;align-items:flex-start;justify-content:center;background:#2a1a12}
+.story-art .story-image{display:block;width:100%;height:auto;min-height:0;max-height:none;object-fit:contain;object-position:center top}
+@media(max-width:700px){.story-art .story-image{width:100%;height:auto;min-height:0;max-height:none;object-fit:contain}}
