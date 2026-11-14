@@ -10,13 +10,15 @@ function nextFriday(date=new Date()){
  if(n===0&&(+p.hour>=15))n=7;
  d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);
 }
-// Dashboard production window changes on Sunday at midnight Pacific,
-// independent of the Friday 10 AM customer ordering cutoff.
+// The Friday-Saturday production window rolls forward Sunday at 8:30 AM Pacific.
+// Until that time, Saturday and early Sunday still belong to the prior Friday.
 function productionFriday(date=new Date()){
- const p=Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"}).formatToParts(date).map(x=>[x.type,x.value]));
+ const p=Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(date).map(x=>[x.type,x.value]));
  const d=new Date(Date.UTC(+p.year,+p.month-1,+p.day));
- const offset=(5-d.getUTCDay()+7)%7;
- d.setUTCDate(d.getUTCDate()+offset);
+ const weekday=d.getUTCDay();
+ const minutes=(+p.hour)*60+(+p.minute);
+ const daysBack=weekday===6?1:weekday===0&&minutes<510?2:weekday===0?-5:(weekday+2)%7;
+ d.setUTCDate(d.getUTCDate()-daysBack);
  return d.toISOString().slice(0,10);
 }
 function b64(s){return Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0))}
