@@ -43,7 +43,37 @@ dialog{width:min(94vw,570px);border:1px solid var(--line);background:var(--cream
 .formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid label{font-size:11px;font-weight:700;letter-spacing:.4px;display:grid;gap:6px}.formgrid .full{grid-column:1/-1}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
 .statusselect{width:auto;min-width:100px;padding:6px;font-size:11px}.notice.error{border-left-color:#a33b30}.notice.success{border-left-color:#55825e}
 @media(max-width:560px){.formgrid{grid-template-columns:1fr}.formgrid .full{grid-column:auto}dialog{padding:20px}}
-.app-tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--line);padding-bottom:10px}.app-tab{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:4px;font-size:12px}.app-tab.active{background:var(--terracotta);color:white;border-color:var(--terracotta)}[hidden]{display:none!important}.shipping-queue{display:grid;gap:14px}.shipping-card{border:1px solid var(--line);padding:18px;background:#fff}.shipping-card h3{margin:0 0 8px}.shipping-card .shipping-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}.shipping-card .shipping-actions input{max-width:245px}.shipping-card address{font-style:normal;line-height:1.65;margin:10px 0;white-space:pre-line}.shipping-card .shipping-actions button{letter-spacing:0;font-size:11px;padding:11px}.shipping-card .sub{margin:6px 0}.order-kind{display:inline-block;font:700 10px 'DM Sans',sans-serif;letter-spacing:.3px;padding:4px 7px;border-radius:3px;vertical-align:middle;white-space:nowrap;background:#eee8df;color:#725e50}.order-kind.recurring{background:#f3dfd1;color:#8e482d}</style></head>
+.app-tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--line);padding-bottom:10px}.app-tab{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:4px;font-size:12px}.app-tab.active{background:var(--terracotta);color:white;border-color:var(--terracotta)}[hidden]{display:none!important}.shipping-queue{display:grid;gap:14px}.shipping-card{border:1px solid var(--line);padding:18px;background:#fff}.shipping-card h3{margin:0 0 8px}.shipping-card .shipping-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}.shipping-card .shipping-actions input{max-width:245px}.shipping-card address{font-style:normal;line-height:1.65;margin:10px 0;white-space:pre-line}.shipping-card .shipping-actions button{letter-spacing:0;font-size:11px;padding:11px}.shipping-card .sub{margin:6px 0}.order-kind{display:inline-block;font:700 10px 'DM Sans',sans-serif;letter-spacing:.3px;padding:4px 7px;border-radius:3px;vertical-align:middle;white-space:nowrap;background:#eee8df;color:#725e50}.order-kind.recurring{background:#f3dfd1;color:#8e482d}
+/* Mobile layout: prevent order tables from widening the entire app. */
+html,body{width:100%;max-width:100%;overflow-x:clip}
+main,#productionView,#shippingView,.columns,.panel,.table-wrap{min-width:0;max-width:100%}
+.columns{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+.table-wrap{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.table-wrap table{min-width:540px}
+@media(max-width:760px){
+ header{width:100%;padding:16px 20px;gap:12px}
+ header .logo{font-size:clamp(29px,8vw,39px);flex:0 1 auto}
+ header .logo small{font-size:8px;letter-spacing:1.7px}
+ header .right{font-size:10px;flex:0 0 auto}
+ main{width:100%;padding:26px 16px 65px}
+ .columns{grid-template-columns:minmax(0,1fr)}
+ .panel{padding:20px 16px}
+ .intro{margin-bottom:22px}
+ .intro h1{font-size:clamp(35px,9vw,48px)}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .stat{min-width:0;padding:20px 8px}
+ .stat strong{font-size:38px}
+ .stat span{font-size:10px}
+ .panel-heading{min-width:0}
+ .panel-heading h2{font-size:clamp(27px,7vw,34px)}
+ .table-wrap{margin:0 -4px}
+ .table-wrap table{width:100%;min-width:540px}
+ .app-tabs{width:100%}
+ .app-tab{flex:1;padding:13px 10px}
+ .shipping-card{min-width:0;padding:15px}
+ .shipping-card .shipping-actions input{max-width:100%;flex:1 1 100%}
+}
+</style></head>
 <body><header><div class="logo">Capella<small>COFFEE ROASTERS</small></div><div class="right">ROASTERY OPERATIONS<br><strong>PRIVATE DASHBOARD</strong></div></header>
 <main><nav class="app-tabs" aria-label="Dashboard sections"><button type="button" class="app-tab active" data-app-tab="production" aria-selected="true">Roastery</button><button type="button" class="app-tab" data-app-tab="shipping" aria-selected="false">Shipping <span id="shippingCount"></span></button></nav><div id="productionView"><div class="intro"><div><div class="eyebrow">CAPELLA / PRODUCTION</div><h1 id="timeGreeting">Hello, Jadyn.</h1><div class="sub">Everything you need for the next Friday–Saturday roast.</div></div><div class="tag">Friday 3 PM PT cutoff</div></div>
 <div class="notice" id="appStatus"><strong>Connecting to Capella orders…</strong> Secure access and database configuration are required.</div>
