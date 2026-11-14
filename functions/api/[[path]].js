@@ -124,7 +124,7 @@ async function handle(request,env,path){
   const outstanding=orders.filter(o=>o.roast_window_date<window);
   const pending=currentOrders.filter(o=>o.roast_window_date===window&&o.fulfillment_status!=="shipped"&&o.fulfillment_status!=="picked_up"&&o.status!=="cancelled"&&o.status!=="refunded"&&(o.status==="paid"||o.source==="manual"));
   const one=pending.reduce((n,o)=>n+o.one_pound_bags,0),half=pending.reduce((n,o)=>n+o.half_pound_bags,0);
-  const {results:plans}=await db.prepare("SELECT * FROM recurring_custom_orders ORDER BY active DESC,customer_name").all();
+  const {results:plans}=await db.prepare("SELECT * FROM recurring_custom_orders WHERE active=1 ORDER BY customer_name").all();
   return reply({window,summary:{one_pound_bags:one,half_pound_bags:half,total_bags:one+half,total_roasted_pounds:one+half/2},orders:currentOrders,outstanding,plans});
  }
  if(request.method==="POST"&&path==="orders"){
