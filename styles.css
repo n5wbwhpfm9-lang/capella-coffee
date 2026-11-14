@@ -239,3 +239,5 @@
 .roast-intro p{max-width:680px;margin:0 auto;font:17px/1.7 Georgia,serif}
 .roast-request-hint{font-size:13px;line-height:1.6;color:#75503d;margin:17px 0}
 @media(max-width:700px){.roast-intro{padding:46px 7% 36px}.roast-intro p{font-size:16px}}
+
+.roast-preference{border:1px solid #d7c4b1;padding:15px 18px;margin:18px 0;display:grid;gap:12px}.roast-preference legend{font:700 12px 'DM Sans',sans-serif;letter-spacing:1.5px;padding:0 6px}.roast-preference label{display:flex;align-items:center;gap:9px;font-size:15px}.roast-preference input{accent-color:#b75b3c}.roast-preference span{font-size:13px;color:#795c4d}
