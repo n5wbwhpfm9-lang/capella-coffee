@@ -244,3 +244,8 @@
 
 /* Longer Capella origin story, keeping the existing goat photograph and heading. */
 .story-content{padding-top:55px;padding-bottom:55px}.story-content .story-legend p{line-height:1.72;margin:0 0 21px;font-size:clamp(15px,1.5vw,17px)}.story-conclusion{border-top:1px solid rgba(255,244,232,.34);padding-top:26px;margin-top:29px}.story-conclusion h3{font:400 clamp(25px,2.6vw,34px) 'Libre Caslon Display',Georgia,serif;color:#e2a181;margin:0 0 12px}.story-conclusion p{font-size:clamp(15px,1.5vw,17px);line-height:1.7;margin:0}
+
+/* Keep the goat visible as the longer story increases the section height. */
+.story-art{position:relative;align-items:start}
+.story-image{height:100%;max-height:none;object-fit:cover;object-position:35% center}
+@media(max-width:700px){.story-image{object-position:35% center}}
