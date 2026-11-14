@@ -121,12 +121,13 @@ async function handle(request,env,path){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(window))return fail("Invalid date");
   const {results:orders}=await db.prepare(`SELECT o.*,COALESCE(SUM(CASE WHEN i.bag_size_oz=16 THEN i.quantity ELSE 0 END),0) AS one_pound_bags,COALESCE(SUM(CASE WHEN i.bag_size_oz=8 THEN i.quantity ELSE 0 END),0) AS half_pound_bags FROM orders o LEFT JOIN order_items i ON i.order_id=o.id WHERE (o.roast_window_date=? OR (o.roast_window_date<? AND o.fulfillment_status NOT IN ('shipped','picked_up') AND o.status NOT IN ('cancelled','refunded'))) GROUP BY o.id ORDER BY o.roast_window_date ASC,o.created_at DESC`).bind(window,window).all();
   const {results:completed}=await db.prepare(`SELECT o.*,COALESCE(SUM(CASE WHEN i.bag_size_oz=16 THEN i.quantity ELSE 0 END),0) AS one_pound_bags,COALESCE(SUM(CASE WHEN i.bag_size_oz=8 THEN i.quantity ELSE 0 END),0) AS half_pound_bags FROM orders o LEFT JOIN order_items i ON i.order_id=o.id WHERE o.fulfillment_status IN ('shipped','picked_up') AND o.status NOT IN ('cancelled','refunded') GROUP BY o.id ORDER BY o.updated_at DESC LIMIT 100`).all();
+  const {results:shipping}=await db.prepare(`SELECT o.*,COALESCE(SUM(CASE WHEN i.bag_size_oz=16 THEN i.quantity ELSE 0 END),0) AS one_pound_bags,COALESCE(SUM(CASE WHEN i.bag_size_oz=8 THEN i.quantity ELSE 0 END),0) AS half_pound_bags FROM orders o LEFT JOIN order_items i ON i.order_id=o.id WHERE o.delivery_method='shipping' AND o.fulfillment_status!='shipped' AND o.status NOT IN ('cancelled','refunded') GROUP BY o.id ORDER BY o.roast_window_date ASC,o.created_at ASC LIMIT 200`).all();
   const currentOrders=orders.filter(o=>o.roast_window_date===window&&o.fulfillment_status!=="shipped"&&o.fulfillment_status!=="picked_up"&&o.status!=="cancelled"&&o.status!=="refunded");
   const outstanding=orders.filter(o=>o.roast_window_date<window);
   const pending=currentOrders.filter(o=>o.roast_window_date===window&&o.fulfillment_status!=="shipped"&&o.fulfillment_status!=="picked_up"&&o.status!=="cancelled"&&o.status!=="refunded"&&(o.status==="paid"||o.source==="manual"));
   const one=pending.reduce((n,o)=>n+o.one_pound_bags,0),half=pending.reduce((n,o)=>n+o.half_pound_bags,0);
   const {results:plans}=await db.prepare("SELECT * FROM recurring_custom_orders WHERE active=1 ORDER BY customer_name").all();
-  return reply({window,summary:{one_pound_bags:one,half_pound_bags:half,total_bags:one+half,total_roasted_pounds:one+half/2},orders:currentOrders,outstanding,completed,plans});
+  return reply({window,summary:{one_pound_bags:one,half_pound_bags:half,total_bags:one+half,total_roasted_pounds:one+half/2},orders:currentOrders,outstanding,completed,shipping,plans});
  }
  if(request.method==="POST"&&path==="orders"){
   const x=await request.json();
@@ -151,6 +152,15 @@ async function handle(request,env,path){
  }
  if(request.method==="PATCH"&&path.startsWith("orders/")){
   const id=decodeURIComponent(path.slice(7));const x=await request.json();
+  if(x.tracking_number!==undefined){
+   const tracking=String(x.tracking_number||"").trim();
+   if(!/^[A-Za-z0-9 -]{0,40}$/.test(tracking))return fail("Invalid tracking number");
+   const existing=await db.prepare("SELECT delivery_method,notes FROM orders WHERE id=?").bind(id).first();
+   if(!existing||existing.delivery_method!=="shipping")return fail("Shipping order not found",404);
+   const clean=String(existing.notes||"").replace(/(?:^|\\n)USPS tracking: [^\\n]*/g,"").trim();
+   const notes=[clean,tracking?"USPS tracking: "+tracking:""].filter(Boolean).join("\\n");
+   await db.prepare("UPDATE orders SET notes=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(notes,id).run();
+  }
   if(x.fulfillment_status!==undefined){
    if(!allowedStatuses.includes(x.fulfillment_status))return fail("Invalid fulfillment status");
    await db.prepare("UPDATE orders SET fulfillment_status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(x.fulfillment_status,id).run();
