@@ -229,3 +229,6 @@
 
 /* Keep the entire Africa map panel on one continuous background. */
 .origin-map,.africa-overview{background:#eee4d5}
+
+/* Highlight Ethiopia on the continental origin map. */
+.ethiopia-country{fill:#8f6046;stroke:#5f3827;stroke-width:2.5;stroke-linejoin:round}
