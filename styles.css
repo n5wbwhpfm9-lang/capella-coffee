@@ -257,3 +257,8 @@
 .story-art{display:flex;align-items:flex-start;justify-content:center;background:#2a1a12}
 .story-art .story-image{display:block;width:100%;height:auto;min-height:0;max-height:none;object-fit:contain;object-position:center top}
 @media(max-width:700px){.story-art .story-image{width:100%;height:auto;min-height:0;max-height:none;object-fit:contain}}
+
+/* Extend the story photograph across the full-height column while retaining the uncropped goat. */
+.story-art{position:relative;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;background:#2a1a12 url('assets/goat-story.jpg') left center / cover no-repeat}
+.story-art .story-image{position:relative;z-index:1;display:block;width:100%;height:auto;min-height:0;max-height:none;object-fit:contain;object-position:center top;-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 72%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0%,#000 72%,transparent 100%)}
+@media(max-width:700px){.story-art{background-position:left center}.story-art .story-image{-webkit-mask-image:none;mask-image:none}}
