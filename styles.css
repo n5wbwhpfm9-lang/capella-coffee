@@ -241,3 +241,6 @@
 @media(max-width:700px){.roast-intro{padding:46px 7% 36px}.roast-intro p{font-size:16px}}
 
 .roast-preference{border:1px solid #d7c4b1;padding:15px 18px;margin:18px 0;display:grid;gap:12px}.roast-preference legend{font:700 12px 'DM Sans',sans-serif;letter-spacing:1.5px;padding:0 6px}.roast-preference label{display:flex;align-items:center;gap:9px;font-size:15px}.roast-preference input{accent-color:#b75b3c}.roast-preference span{font-size:13px;color:#795c4d}
+
+/* Longer Capella origin story, keeping the existing goat photograph and heading. */
+.story-content{padding-top:55px;padding-bottom:55px}.story-content .story-legend p{line-height:1.72;margin:0 0 21px;font-size:clamp(15px,1.5vw,17px)}.story-conclusion{border-top:1px solid rgba(255,244,232,.34);padding-top:26px;margin-top:29px}.story-conclusion h3{font:400 clamp(25px,2.6vw,34px) 'Libre Caslon Display',Georgia,serif;color:#e2a181;margin:0 0 12px}.story-conclusion p{font-size:clamp(15px,1.5vw,17px);line-height:1.7;margin:0}
