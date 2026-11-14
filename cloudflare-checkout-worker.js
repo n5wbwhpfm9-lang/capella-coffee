@@ -63,7 +63,9 @@ async function processStripeEvent(event,env) {
     if (session.payment_status!=="paid") return;
     const lines=await stripeGet("checkout/sessions/"+encodeURIComponent(session.id)+"/line_items?limit=100",env);
     const items=lines.data.filter(x=>priceSizes[x.price?.id]).map(x=>({oz:priceSizes[x.price.id],quantity:x.quantity,unitPrice:x.price.unit_amount,priceId:x.price.id}));
-    const request=session.custom_fields?.find(x=>x.key==="special_request")?.text?.value||null;
+    const note=session.custom_fields?.find(x=>x.key==="special_request")?.text?.value||null;
+    const roast=session.metadata?.roast_preference||"Light";
+    const request="Roast: "+roast+(note?" · "+note:"");
     await savePaidOrder(env,event,{id:"checkout_"+session.id,sessionId:session.id,paymentIntent:session.payment_intent, name:session.customer_details?.name,email:session.customer_details?.email,delivery:session.metadata?.delivery,address:session.collected_information?.shipping_details?.address||session.shipping_details?.address,request,items,total:session.amount_total,created:session.created});
     await sendOrderConfirmation(env,"checkout_"+session.id);
   }
@@ -82,7 +84,7 @@ async function processStripeEvent(event,env) {
       return priceSizes[id]?{oz:priceSizes[id],quantity:line.quantity||1,unitPrice:line.price?.unit_amount||null,priceId:id}:null;
     }).filter(Boolean);
     const customer=await stripeGet("customers/"+encodeURIComponent(invoice.customer),env);
-    await savePaidOrder(env,event,{id:"invoice_"+invoice.id,subscriptionId,paymentIntent:typeof invoice.payment_intent==="string"?invoice.payment_intent:null,name:customer.name,email:invoice.customer_email||customer.email,delivery:churchLine?"pickup":delivery,address:customer.shipping?.address||null,request:subscription.metadata?.special_request||null,items,total:invoice.amount_paid,created:invoice.created});
+    await savePaidOrder(env,event,{id:"invoice_"+invoice.id,subscriptionId,paymentIntent:typeof invoice.payment_intent==="string"?invoice.payment_intent:null,name:customer.name,email:invoice.customer_email||customer.email,delivery:churchLine?"pickup":delivery,address:customer.shipping?.address||null,request:"Roast: "+(subscription.metadata?.roast_preference||"Light")+(subscription.metadata?.special_request?" · "+subscription.metadata.special_request:""),items,total:invoice.amount_paid,created:invoice.created});
     await sendOrderConfirmation(env,"invoice_"+invoice.id);
   }
 }
@@ -130,6 +132,7 @@ export default {
   let input;
   try{input=await request.json()}catch{return json({error:"Invalid request"},400)}
   const size=String(input.size),frequency=String(input.frequency),delivery=String(input.delivery);
+  const roastPreference=["Light","Medium","Dark"].includes(input.roast_preference)?input.roast_preference:"Light";
   const price=PRICES[size]?.[frequency];
   if(!price||!["shipping","pickup"].includes(delivery))return json({error:"Invalid purchase selection"},400);
   const subscription=frequency!=="once";
@@ -149,10 +152,12 @@ export default {
   params.set("billing_address_collection","auto");
   if(!subscription) params.set("customer_creation","always");
   params.set("metadata[delivery]",delivery);
+  params.set("metadata[roast_preference]",roastPreference);
   params.set("metadata[bag_size]",size);
   params.set("metadata[frequency]",frequency);
   if(subscription){
     params.set("subscription_data[metadata][delivery]",delivery);
+    params.set("subscription_data[metadata][roast_preference]",roastPreference);
     params.set("subscription_data[metadata][bag_size]",size);
     params.set("subscription_data[metadata][frequency]",frequency);
   }
