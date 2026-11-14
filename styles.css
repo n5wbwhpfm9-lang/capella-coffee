@@ -147,7 +147,9 @@
 .newsletter .ml-embedded .ml-form-recaptcha{display:flex!important;justify-content:center!important;margin:14px auto!important;overflow:visible!important}
 .newsletter .ml-embedded .g-recaptcha>div{max-width:100%!important;margin:0 auto!important}
 .newsletter .ml-embedded iframe[src*="recaptcha"],.newsletter .ml-embedded iframe[src*="hcaptcha"]{max-width:100%!important}
-.newsletter .ml-embedded .ml-form-embedSubmit button{display:block!important;max-width:100%!important;margin:12px 0 0!important}
+.newsletter .ml-embedded .ml-form-embedSubmit button.primary{display:block!important;max-width:100%!important;margin:12px 0 0!important}
+/* MailerLite injects a hidden loading button; never override its inline display:none. */
+.newsletter .ml-embedded .ml-form-embedSubmit button.loading{display:none!important}
 @media(max-width:380px){.newsletter .ml-embedded .g-recaptcha{transform:scale(.88);transform-origin:center top;margin-bottom:-8px!important}}
 
 /* Checkout dialog */
@@ -194,4 +196,19 @@
  .site-header .brand{width:125px}
  .site-header .header-order{font-size:8px;padding:8px 7px}
  .site-header .cart{font-size:11px}
+}
+
+/* Capella mobile navigation: a compact two-row layout prevents logo/cart collisions. */
+@media(max-width:700px){
+ .site-header{height:auto!important;min-height:110px;display:grid!important;grid-template-columns:1fr auto!important;grid-template-rows:auto auto!important;gap:5px 8px!important;padding:12px 5% 10px!important;align-items:center!important}
+ .site-header>.brand{grid-column:1;grid-row:1;width:155px!important;max-width:100%;justify-self:start;transform:none!important}
+ .site-header>.brand small{font-size:7px!important;letter-spacing:1.5px!important;margin-top:-9px!important}
+ .site-header>nav:first-child{grid-column:1;grid-row:2;justify-self:start;display:flex!important;gap:18px!important}
+ .site-header>nav:first-child a{font-size:14px!important}
+ .site-header>.nav-right{grid-column:2;grid-row:1 / span 2;display:flex!important;flex-direction:column!important;align-items:flex-end!important;justify-content:center!important;gap:10px!important}
+ .site-header .header-order{font-size:11px!important;padding:11px 14px!important;letter-spacing:.5px!important}
+ .site-header .cart{font-size:14px!important;display:flex!important;align-items:center;gap:8px}
+ .site-header .cart span{display:inline-grid;place-items:center}
+ .africa-overview svg{overflow:visible}
+ .map-label{font-size:15px!important;letter-spacing:.5px!important;paint-order:stroke;stroke:#f0e5d7;stroke-width:4px;stroke-linejoin:round}
 }
