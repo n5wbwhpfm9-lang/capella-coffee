@@ -93,6 +93,28 @@ async function handle(request,env,path){
   if(!allowed.includes(recipient))return fail("Test emails may only be sent to authorized admins",403);
   return sendTestEmail(env,recipient);
  }
+
+ if(request.method==="GET"&&path==="finances"){
+  const month=new URL(request.url).searchParams.get("month")||new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit"}).format(new Date()).slice(0,7);
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return fail("Invalid month");
+  const from=month+"-01",to=new Date(Date.UTC(+month.slice(0,4),+month.slice(5),1)).toISOString().slice(0,10);
+  const revenue=await db.prepare("SELECT COUNT(*) AS order_count,COALESCE(SUM(amount_total_cents),0) AS gross_cents FROM orders WHERE status='paid' AND substr(created_at,1,10)>=? AND substr(created_at,1,10)<?").bind(from,to).first();
+  let expenses=[],expenseTotal=0,needsSetup=false;
+  try{
+   const x=await db.prepare("SELECT * FROM finance_expenses WHERE expense_date>=? AND expense_date<? ORDER BY expense_date DESC,created_at DESC LIMIT 500").bind(from,to).all();
+   expenses=x.results;expenseTotal=expenses.reduce((n,e)=>n+e.amount_cents,0);
+  }catch(e){if(String(e).includes("no such table"))needsSetup=true;else throw e}
+  return reply({month,needsSetup,revenue:{gross_cents:revenue.gross_cents,order_count:revenue.order_count},expenses,expense_total_cents:expenseTotal,unadjusted_margin_cents:revenue.gross_cents-expenseTotal,notes:"Gross paid order amounts may include shipping and sales tax. Stripe fees and inventory costs are included only if entered as expenses. This is not accounting net income or a tax calculation."});
+ }
+ if(request.method==="POST"&&path==="finances/expenses"){
+  const x=await request.json().catch(()=>({})),amount=Number(x.amount_cents);
+  const categories=["green_beans","packaging","shipping","processing_fees","equipment","supplies","marketing","other"];
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(x.expense_date||"")||!categories.includes(x.category)||!Number.isSafeInteger(amount)||amount<=0||amount>100000000)return fail("Invalid expense");
+  const id=crypto.randomUUID();
+  try{await db.prepare("INSERT INTO finance_expenses(id,expense_date,category,vendor,description,amount_cents) VALUES (?,?,?,?,?,?)").bind(id,x.expense_date,x.category,String(x.vendor||"").slice(0,150),String(x.description||"").slice(0,500),amount).run()}
+  catch(e){if(String(e).includes("no such table"))return fail("Run database/finance-migration.sql in D1 first",503);throw e}
+  return reply({id},201);
+ }
  if(request.method==="GET"&&path==="dashboard"){
   await ensureRecurring(db);
   const window=new URL(request.url).searchParams.get("window")||productionFriday();
