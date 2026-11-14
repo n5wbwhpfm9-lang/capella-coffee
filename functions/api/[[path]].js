@@ -165,7 +165,17 @@ async function handle(request,env,path){
  if(request.method==="PATCH"&&path.startsWith("recurring/")){
   const id=decodeURIComponent(path.slice(10)),x=await request.json();
   if(typeof x.active!=="boolean")return fail("Invalid status");
-  await db.prepare("UPDATE recurring_custom_orders SET active=? WHERE id=?").bind(x.active?1:0,id).run();
+  const plan=await db.prepare("SELECT id,active FROM recurring_custom_orders WHERE id=?").bind(id).first();
+  if(!plan)return fail("Recurring order not found",404);
+  if(!x.active){
+   const now=productionFriday();
+   await db.batch([
+    db.prepare("UPDATE recurring_custom_orders SET active=0 WHERE id=?").bind(id),
+    db.prepare("UPDATE orders SET status='cancelled',updated_at=CURRENT_TIMESTAMP WHERE id LIKE ? AND roast_window_date>=? AND status='awaiting_payment' AND fulfillment_status NOT IN ('shipped','picked_up') AND source='manual'").bind("rec_"+id+"_%",now)
+   ]);
+  }else{
+   await db.prepare("UPDATE recurring_custom_orders SET active=1 WHERE id=?").bind(id).run();
+  }
   return reply({ok:true});
  }
  return fail("Not found",404);
