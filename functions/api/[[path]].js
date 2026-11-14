@@ -157,8 +157,8 @@ async function handle(request,env,path){
    if(!/^[A-Za-z0-9 -]{0,40}$/.test(tracking))return fail("Invalid tracking number");
    const existing=await db.prepare("SELECT delivery_method,notes FROM orders WHERE id=?").bind(id).first();
    if(!existing||existing.delivery_method!=="shipping")return fail("Shipping order not found",404);
-   const clean=String(existing.notes||"").replace(/(?:^|\\n)USPS tracking: [^\\n]*/g,"").trim();
-   const notes=[clean,tracking?"USPS tracking: "+tracking:""].filter(Boolean).join("\\n");
+   const clean=String(existing.notes||"").replace(/(?:^|\n)USPS tracking: [^\n]*/g,"").trim();
+   const notes=[clean,tracking?"USPS tracking: "+tracking:""].filter(Boolean).join("\n");
    await db.prepare("UPDATE orders SET notes=?,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(notes,id).run();
   }
   if(x.fulfillment_status!==undefined){
