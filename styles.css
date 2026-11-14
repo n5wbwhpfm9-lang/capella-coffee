@@ -249,3 +249,6 @@
 .story-art{position:relative;align-items:start}
 .story-image{height:100%;max-height:none;object-fit:cover;object-position:35% center}
 @media(max-width:700px){.story-image{object-position:35% center}}
+
+/* Give the story's closing thought the prominence of a true editorial heading. */
+.story-conclusion h3{font-family:'Libre Caslon Display',Georgia,serif;font-size:clamp(34px,3.8vw,52px);line-height:1.12;letter-spacing:-.025em;color:#f2c0a4;margin:0 0 19px}
