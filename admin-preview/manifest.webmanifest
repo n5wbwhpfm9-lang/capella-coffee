@@ -8,13 +8,13 @@
   "theme_color": "#b75b3c",
   "icons": [
     {
-      "src": "capella-admin-icon.png",
+      "src": "capella-goat-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "capella-admin-apple-touch-icon.png",
+      "src": "capella-goat-apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
     }
