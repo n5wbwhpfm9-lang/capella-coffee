@@ -212,3 +212,17 @@
  .africa-overview svg{overflow:visible}
  .map-label{font-size:15px!important;letter-spacing:.5px!important;paint-order:stroke;stroke:#f0e5d7;stroke-width:4px;stroke-linejoin:round}
 }
+
+/* Mobile storefront header: centered Capella wordmark, order CTA left, bag right. */
+@media(max-width:700px){
+ .site-header{height:100px!important;min-height:100px!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr)!important;grid-template-rows:1fr!important;column-gap:4px!important;padding:10px 3%!important;align-items:center!important}
+ .site-header>nav:first-child{display:none!important}
+ .site-header>.brand{grid-column:2!important;grid-row:1!important;justify-self:center!important;width:min(100%,195px)!important;max-width:195px!important;transform:none!important;align-items:center!important}
+ .site-header>.brand .arched-logo{width:100%!important;max-width:195px!important;height:auto!important}
+ .site-header>.brand small{font-size:clamp(6px,1.5vw,8px)!important;letter-spacing:1.3px!important;white-space:nowrap!important;margin-top:-10px!important}
+ .site-header>.nav-right{display:contents!important}
+ .site-header .header-order{grid-column:1!important;grid-row:1!important;justify-self:start!important;display:inline-flex!important;font-size:clamp(8px,2vw,10px)!important;padding:10px 7px!important;line-height:1.15!important;letter-spacing:0!important;white-space:nowrap!important}
+ .site-header .cart{grid-column:3!important;grid-row:1!important;justify-self:end!important;display:flex!important;align-items:center!important;gap:5px!important;padding:0!important;font-size:clamp(10px,2.8vw,14px)!important;white-space:nowrap!important}
+ .site-header .cart span{flex:none!important}
+ .site-header .nav-right>a:first-child{display:none!important}
+}
