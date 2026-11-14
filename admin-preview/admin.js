@@ -11,4 +11,24 @@ $("orderForm").onsubmit=async e=>{e.preventDefault();const x=Object.fromEntries(
 document.addEventListener("change",async e=>{const id=e.target.dataset.status;if(!id)return;try{await api("orders/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify({fulfillment_status:e.target.value})});await load()}catch(err){alert(err.message)}});
 document.addEventListener("click",async e=>{const paid=e.target.closest("[data-paid]");const toggle=e.target.closest("[data-toggle]");if(!paid&&!toggle)return;try{if(paid){if(!confirm("Confirm payment received?"))return;await api("orders/"+encodeURIComponent(paid.dataset.paid),{method:"PATCH",body:JSON.stringify({payment_status:"paid"})})}else{await api("recurring/"+encodeURIComponent(toggle.dataset.toggle),{method:"PATCH",body:JSON.stringify({active:toggle.dataset.active!=="1"})})}await load()}catch(err){alert(err.message)}});
 $("sendTestEmail").onclick=async()=>{const email=prompt("Send test confirmation to which authorized admin email?","craig_harris@mac.com");if(!email)return;const button=$("sendTestEmail");button.disabled=true;try{const result=await api("test-email",{method:"POST",body:JSON.stringify({email:email.trim()})});notice(result.message)}catch(e){notice(e.message,true)}finally{button.disabled=false}};
+
+const dollars=n=>"$"+(Number(n||0)/100).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const monthLocal=()=>{const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit"}).formatToParts(new Date());const v=Object.fromEntries(parts.map(p=>[p.type,p.value]));return v.year+"-"+v.month};
+$("financeMonth").value=monthLocal();
+async function loadFinances(){
+ try{const data=await api("finances?month="+encodeURIComponent($("financeMonth").value));
+ $("financeSales").textContent=dollars(data.revenue.gross_cents);
+ $("financeExpenses").textContent=dollars(data.expense_total_cents);
+ $("financeMargin").textContent=dollars(data.unadjusted_margin_cents);
+ $("financeOrders").textContent=data.revenue.order_count;
+ $("financeNote").textContent=data.needsSetup?"Database setup needed: run database/finance-migration.sql in Cloudflare D1.":data.notes;
+ $("expenseRows").innerHTML=data.expenses.length?data.expenses.map(e=>'<tr><td>'+escape(e.expense_date)+'</td><td>'+escape(e.category.replaceAll("_"," "))+'</td><td>'+escape([e.vendor,e.description].filter(Boolean).join(" · "))+'</td><td>'+dollars(e.amount_cents)+'</td></tr>').join(""):'<tr><td colspan="4" class="empty">No expenses recorded for this month.</td></tr>';
+ }catch(e){$("financeNote").textContent="Could not load finances: "+e.message}
+}
+$("financeMonth").onchange=loadFinances;
+$("addExpense").onclick=()=>{$("expenseForm").reset();$("expenseForm").elements.expense_date.value=new Date().toLocaleDateString("en-CA");$("expenseDialog").showModal()};
+$("cancelExpense").onclick=()=>$("expenseDialog").close();
+$("expenseForm").onsubmit=async e=>{e.preventDefault();const x=Object.fromEntries(new FormData(e.target));x.amount_cents=Math.round(Number(x.amount_dollars)*100);const b=$("saveExpense");b.disabled=true;try{await api("finances/expenses",{method:"POST",body:JSON.stringify(x)});$("expenseDialog").close();await loadFinances()}catch(err){alert(err.message)}finally{b.disabled=false}};
+loadFinances();
+
 load()})();
