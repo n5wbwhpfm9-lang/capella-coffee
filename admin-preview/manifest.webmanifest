@@ -1,0 +1,22 @@
+{
+  "name": "Capella Coffee Roastery Dashboard",
+  "short_name": "Capella Admin",
+  "start_url": "/admin-preview/",
+  "scope": "/admin-preview/",
+  "display": "standalone",
+  "background_color": "#f8f2e9",
+  "theme_color": "#b75b3c",
+  "icons": [
+    {
+      "src": "/admin-preview/capella-admin-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/admin-preview/capella-admin-apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
