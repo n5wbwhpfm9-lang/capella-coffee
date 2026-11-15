@@ -262,3 +262,7 @@
 .story-art{position:relative;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;background:#2a1a12 url('assets/goat-story.jpg') left center / cover no-repeat}
 .story-art .story-image{position:relative;z-index:1;display:block;width:100%;height:auto;min-height:0;max-height:none;object-fit:contain;object-position:center top;-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 72%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0%,#000 72%,transparent 100%)}
 @media(max-width:700px){.story-art{background-position:left center}.story-art .story-image{-webkit-mask-image:none;mask-image:none}}
+
+/* Self-service subscription management in the storefront footer. */
+.subscription-link{font:700 11px 'DM Sans',sans-serif;letter-spacing:1.2px;text-decoration:underline;text-underline-offset:5px;white-space:nowrap}
+.subscription-link:hover{color:#b75b3c}
