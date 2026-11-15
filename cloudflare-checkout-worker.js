@@ -133,13 +133,15 @@ export default {
   try{input=await request.json()}catch{return json({error:"Invalid request"},400)}
   const size=String(input.size),frequency=String(input.frequency),delivery=String(input.delivery);
   const roastPreference=["Light","Medium","Dark"].includes(input.roast_preference)?input.roast_preference:"Light";
+  const quantity=Number(input.quantity||1);
+  if(!Number.isInteger(quantity)||quantity<1||quantity>2)return json({error:"Invalid bag quantity"},400);
   const price=PRICES[size]?.[frequency];
   if(!price||!["shipping","pickup"].includes(delivery))return json({error:"Invalid purchase selection"},400);
   const subscription=frequency!=="once";
   const params=new URLSearchParams();
   params.set("mode",subscription?"subscription":"payment");
   params.set("line_items[0][price]",price);
-  params.set("line_items[0][quantity]","1");
+  params.set("line_items[0][quantity]",String(quantity));
   params.set("success_url",SHOP+"?checkout=success");
   params.set("cancel_url",SHOP+"?checkout=cancelled");
   params.set("allow_promotion_codes","true");
@@ -154,11 +156,13 @@ export default {
   params.set("metadata[delivery]",delivery);
   params.set("metadata[roast_preference]",roastPreference);
   params.set("metadata[bag_size]",size);
+  params.set("metadata[quantity]",String(quantity));
   params.set("metadata[frequency]",frequency);
   if(subscription){
     params.set("subscription_data[metadata][delivery]",delivery);
     params.set("subscription_data[metadata][roast_preference]",roastPreference);
     params.set("subscription_data[metadata][bag_size]",size);
+    params.set("subscription_data[metadata][quantity]",String(quantity));
     params.set("subscription_data[metadata][frequency]",frequency);
   }
   if(delivery==="shipping"){
