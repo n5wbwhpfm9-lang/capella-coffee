@@ -272,3 +272,8 @@
 .roast-intro h2{margin:9px auto 12px}
 .roast-intro p{line-height:1.55}
 @media(max-width:700px){.roast-intro{padding:28px 7% 32px}}
+
+/* Tighten the transition from the three coffee promises to the ordering area. */
+.promise{padding-bottom:20px}
+.product-section{padding-top:18px}
+@media(max-width:700px){.promise{padding-bottom:12px}.product-section{padding-top:14px}}
