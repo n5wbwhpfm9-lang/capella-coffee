@@ -266,3 +266,9 @@
 /* Self-service subscription management in the storefront footer. */
 .subscription-link{font:700 11px 'DM Sans',sans-serif;letter-spacing:1.2px;text-decoration:underline;text-underline-offset:5px;white-space:nowrap}
 .subscription-link:hover{color:#b75b3c}
+
+/* Tighter spacing for the roasting philosophy below the order form. */
+.roast-intro{padding:32px 7% 38px}
+.roast-intro h2{margin:9px auto 12px}
+.roast-intro p{line-height:1.55}
+@media(max-width:700px){.roast-intro{padding:28px 7% 32px}}
