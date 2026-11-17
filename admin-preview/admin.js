@@ -38,5 +38,24 @@ $("addExpense").onclick=()=>{$("expenseForm").reset();$("expenseForm").elements.
 $("cancelExpense").onclick=()=>$("expenseDialog").close();
 $("expenseForm").onsubmit=async e=>{e.preventDefault();const x=Object.fromEntries(new FormData(e.target));x.amount_cents=Math.round(Number(x.amount_dollars)*100);const b=$("saveExpense");b.disabled=true;try{await api("finances/expenses",{method:"POST",body:JSON.stringify(x)});$("expenseDialog").close();await loadFinances()}catch(err){alert(err.message)}finally{b.disabled=false}};
 loadFinances();
+$("reportMonth").value=monthLocal();
+async function loadMonthlyReport(){
+ try{
+ const data=await api("monthly-report?month="+encodeURIComponent($("reportMonth").value)),c=data.current,p=data.previous;
+ $("reportRevenue").textContent=dollars(c.gross_cents);
+ $("reportOrders").textContent=c.orders;
+ $("reportPounds").textContent=(c.one_lb+c.half_lb/2).toLocaleString("en-US",{maximumFractionDigits:1});
+ $("reportRecurring").textContent=c.recurring_orders;
+ $("reportExpenses").textContent=dollars(c.expense_total_cents);
+ $("reportMargin").textContent=dollars(c.unadjusted_margin_cents);
+ const change=c.gross_cents-p.gross_cents;
+ $("reportComparison").textContent="Compared with "+p.month+": "+(change>=0?"+":"−")+dollars(Math.abs(change))+" in paid sales · "+(c.orders-p.orders>=0?"+":"")+(c.orders-p.orders)+" orders.";
+ $("reportCategories").innerHTML=c.expenses.length?c.expenses.map(e=>"<div>"+escape(e.category.replaceAll("_"," "))+": "+dollars(e.total_cents)+"</div>").join(""):"No expenses recorded.";
+ $("reportNote").textContent=c.needsSetup?"Expense table needs setup. "+data.note:data.note;
+ }catch(e){$("reportNote").textContent="Could not load report: "+e.message}
+}
+$("reportMonth").onchange=loadMonthlyReport;
+loadMonthlyReport();
+
 
 load()})();
