@@ -98,7 +98,7 @@ async function handle(request,env,path){
 
  if(request.method==="GET"&&path==="monthly-report"){
   const month=new URL(request.url).searchParams.get("month")||new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit"}).format(new Date()).slice(0,7);
-  if(!/^\\d{4}-(0[1-9]|1[0-2])$/.test(month))return fail("Invalid month");
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return fail("Invalid month");
   const months=[month,new Date(Date.UTC(+month.slice(0,4),+month.slice(5)-2,1)).toISOString().slice(0,7)];
   const reports=[];
   for(const m of months){
