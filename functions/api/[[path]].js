@@ -17,8 +17,8 @@ function productionFriday(date=new Date()){
  const d=new Date(Date.UTC(+p.year,+p.month-1,+p.day));
  const weekday=d.getUTCDay();
  const minutes=(+p.hour)*60+(+p.minute);
- const daysBack=weekday===6?1:weekday===0&&minutes<510?2:weekday===0?-5:(weekday+2)%7;
- d.setUTCDate(d.getUTCDate()-daysBack);
+ const offset=weekday===5?0:weekday===6?-1:weekday===0&&minutes<510?-2:(5-weekday+7)%7;
+ d.setUTCDate(d.getUTCDate()+offset);
  return d.toISOString().slice(0,10);
 }
 function b64(s){return Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0))}
