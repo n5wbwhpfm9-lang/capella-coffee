@@ -96,6 +96,22 @@ async function handle(request,env,path){
   return sendTestEmail(env,recipient);
  }
 
+ if(request.method==="GET"&&path==="monthly-report"){
+  const month=new URL(request.url).searchParams.get("month")||new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit"}).format(new Date()).slice(0,7);
+  if(!/^\\d{4}-(0[1-9]|1[0-2])$/.test(month))return fail("Invalid month");
+  const months=[month,new Date(Date.UTC(+month.slice(0,4),+month.slice(5)-2,1)).toISOString().slice(0,7)];
+  const reports=[];
+  for(const m of months){
+   const from=m+"-01",to=new Date(Date.UTC(+m.slice(0,4),+m.slice(5),1)).toISOString().slice(0,10);
+   const sales=await db.prepare(`SELECT COUNT(DISTINCT o.id) AS orders,COALESCE(SUM(o.amount_total_cents),0) AS gross_cents,COALESCE(SUM(CASE WHEN o.stripe_subscription_id IS NOT NULL OR o.id LIKE 'rec_%' OR o.id LIKE 'invoice_%' THEN 1 ELSE 0 END),0) AS recurring_orders FROM orders o WHERE o.status='paid' AND substr(o.created_at,1,10)>=? AND substr(o.created_at,1,10)<?`).bind(from,to).first();
+   const bags=await db.prepare(`SELECT COALESCE(SUM(CASE WHEN i.bag_size_oz=16 THEN i.quantity ELSE 0 END),0) AS one_lb,COALESCE(SUM(CASE WHEN i.bag_size_oz=8 THEN i.quantity ELSE 0 END),0) AS half_lb FROM order_items i JOIN orders o ON o.id=i.order_id WHERE o.status='paid' AND substr(o.created_at,1,10)>=? AND substr(o.created_at,1,10)<?`).bind(from,to).first();
+   let expenses=[],expensesTotal=0,needsSetup=false;
+   try{const result=await db.prepare("SELECT category,COALESCE(SUM(amount_cents),0) AS total_cents FROM finance_expenses WHERE expense_date>=? AND expense_date<? GROUP BY category ORDER BY total_cents DESC").bind(from,to).all();expenses=result.results;expensesTotal=expenses.reduce((sum,e)=>sum+e.total_cents,0)}
+   catch(e){if(String(e).includes("no such table"))needsSetup=true;else throw e}
+   reports.push({month:m,orders:sales.orders,gross_cents:sales.gross_cents,recurring_orders:sales.recurring_orders,one_lb:bags.one_lb,half_lb:bags.half_lb,expenses,expense_total_cents:expensesTotal,unadjusted_margin_cents:sales.gross_cents-expensesTotal,needsSetup});
+  }
+  return reply({current:reports[0],previous:reports[1],note:"Gross paid orders may include shipping and taxes. Expenses are manually recorded; processing fees and inventory costs may be missing. This is not accounting profit."});
+ }
  if(request.method==="GET"&&path==="finances"){
   const month=new URL(request.url).searchParams.get("month")||new Intl.DateTimeFormat("en-CA",{timeZone:"America/Los_Angeles",year:"numeric",month:"2-digit"}).format(new Date()).slice(0,7);
   if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return fail("Invalid month");
