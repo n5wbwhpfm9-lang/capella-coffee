@@ -157,7 +157,7 @@ async function bankRoute(request,env,path){
 }
 
 async function handle(request,env,path){
- if(path.startsWith("bank/")){try{return await bankRoute(request,env,path)}catch(e){return fail(String(e.message||"Bank request failed").startsWith("Plaid:")?e.message:"Bank request failed. Check configuration or try again.",502)}}
+ if(path.startsWith("bank/")){try{return await bankRoute(request,env,path)}catch(e){const message=String(e.message||"");return fail(message.startsWith("Plaid:")?message:"Bank request failed. Check configuration or try again.",422)}}
  const db=env.DB;if(!db)return fail("Database binding DB is missing",503);
  if(request.method==="POST"&&path==="test-email"){
   const x=await request.json().catch(()=>({}));
