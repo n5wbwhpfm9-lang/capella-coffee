@@ -86,7 +86,78 @@ async function sendTestEmail(env,recipient){
  if(!response.ok){console.error("Capella test email failed",response.status,result.message);return fail("Test email send failed ("+response.status+")",502)}
  return reply({ok:true,message:"Test email sent to "+recipient});
 }
+
+async function plaidCall(env,endpoint,data){
+ if(!env.PLAID_CLIENT_ID||!env.PLAID_SECRET)throw Error("Plaid production credentials are not configured.");
+ const res=await fetch("https://production.plaid.com/"+endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client_id:env.PLAID_CLIENT_ID,secret:env.PLAID_SECRET,...data})});
+ const result=await res.json();
+ if(!res.ok)throw Error("Plaid: "+String(result.error_code||"REQUEST_FAILED"));
+ return result;
+}
+async function bankKey(env){
+ const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("capella-bank-token-v1:"+env.PLAID_SECRET));
+ return crypto.subtle.importKey("raw",bytes,"AES-GCM",false,["encrypt","decrypt"]);
+}
+async function sealBank(env,token){
+ const iv=crypto.getRandomValues(new Uint8Array(12));
+ const ciphertext=await crypto.subtle.encrypt({name:"AES-GCM",iv},await bankKey(env),new TextEncoder().encode(token));
+ return JSON.stringify([Array.from(iv),Array.from(new Uint8Array(ciphertext))]);
+}
+async function openBank(env,stored){
+ const [iv,ct]=JSON.parse(stored);
+ return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:new Uint8Array(iv)},await bankKey(env),new Uint8Array(ct)));
+}
+async function bankRoute(request,env,path){
+ const db=env.DB;
+ if(request.method==="POST"&&request.headers.get("Origin")!==new URL(request.url).origin)return fail("Invalid origin",403);
+ if(!env.PLAID_CLIENT_ID||!env.PLAID_SECRET)return fail("Plaid credentials not configured",503);
+ await db.prepare("CREATE TABLE IF NOT EXISTS plaid_bank (id INTEGER PRIMARY KEY CHECK(id=1), token TEXT NOT NULL, account_id TEXT NOT NULL, label TEXT NOT NULL)").run();
+ const linked=await db.prepare("SELECT * FROM plaid_bank WHERE id=1").first();
+ if(request.method==="GET"&&path==="bank/status")return reply({connected:!!linked,label:linked?.label||null});
+ if(request.method==="POST"&&path==="bank/link"){
+  if(linked)return fail("A bank is already connected",409);
+  const result=await plaidCall(env,"link/token/create",{user:{client_user_id:"capella-business"},client_name:"Capella Coffee",products:["transactions"],country_codes:["US"],language:"en",transactions:{days_requested:180}});
+  return reply({link_token:result.link_token});
+ }
+ if(request.method==="POST"&&path==="bank/exchange"){
+  if(linked)return fail("A bank is already connected",409);
+  const x=await request.json();
+  if(typeof x.public_token!=="string"||typeof x.account_id!=="string")return fail("Select one business checking account.");
+  const result=await plaidCall(env,"item/public_token/exchange",{public_token:x.public_token});
+  try{
+   const accounts=await plaidCall(env,"accounts/get",{access_token:result.access_token});
+   const account=accounts.accounts.find(a=>a.account_id===x.account_id&&a.type==="depository"&&a.subtype==="checking");
+   if(!account)throw Error("Select a checking account.");
+   await db.prepare("INSERT INTO plaid_bank(id,token,account_id,label) VALUES(1,?,?,?)").bind(await sealBank(env,result.access_token),account.account_id,account.name+" ••••"+(account.mask||"")).run();
+   return reply({connected:true});
+  }catch(e){try{await plaidCall(env,"item/remove",{access_token:result.access_token})}catch{}throw e}
+ }
+ if(request.method==="POST"&&path==="bank/disconnect"){
+  if(linked){await plaidCall(env,"item/remove",{access_token:await openBank(env,linked.token)});await db.prepare("DELETE FROM plaid_bank WHERE id=1").run()}
+  return reply({connected:false});
+ }
+ if(request.method==="GET"&&path==="bank/transactions"){
+  if(!linked)return fail("Connect your business bank first",409);
+  const month=new URL(request.url).searchParams.get("month");
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month||""))return fail("Invalid month");
+  const start=month+"-01",end=new Date(Date.UTC(+month.slice(0,4),+month.slice(5),0)).toISOString().slice(0,10);
+  const today=new Date().toISOString().slice(0,10);
+  if(start>today)return reply({transactions:[],label:linked.label});
+  const token=await openBank(env,linked.token);
+  let transactions=[],offset=0,total=0;
+  do{
+   const result=await plaidCall(env,"transactions/get",{access_token:token,start_date:start,end_date:end>today?today:end,options:{account_ids:[linked.account_id],count:100,offset}});
+   total=result.total_transactions;offset+=result.transactions.length;
+   transactions.push(...result.transactions.map(t=>({id:t.transaction_id,date:t.date,name:t.merchant_name||t.name,amount_cents:Math.round(t.amount*100),pending:t.pending,category:t.personal_finance_category?.primary||"UNCLASSIFIED"})));
+   if(!result.transactions.length)break;
+  }while(offset<total&&offset<2000);
+  return reply({transactions,label:linked.label,truncated:offset<total});
+ }
+ return fail("Not found",404);
+}
+
 async function handle(request,env,path){
+ if(path.startsWith("bank/")){try{return await bankRoute(request,env,path)}catch(e){return fail(String(e.message||"Bank request failed").startsWith("Plaid:")?e.message:"Bank request failed. Check configuration or try again.",502)}}
  const db=env.DB;if(!db)return fail("Database binding DB is missing",503);
  if(request.method==="POST"&&path==="test-email"){
   const x=await request.json().catch(()=>({}));
