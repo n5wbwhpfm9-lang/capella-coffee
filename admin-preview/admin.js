@@ -58,4 +58,39 @@ $("reportMonth").onchange=loadMonthlyReport;
 loadMonthlyReport();
 
 
+
+$("bankMonth").value=monthLocal();
+let bankConnected=false,bankBusy=false;
+async function bankStatus(){
+ try{const d=await api("bank/status");bankConnected=d.connected;$("bankConnect").disabled=d.connected;$("bankSync").hidden=!d.connected;$("bankDisconnect").hidden=!d.connected;$("bankStatus").textContent=d.connected?"Connected: "+d.label:"No bank connected.";if(d.connected)await bankTransactions()}
+ catch(e){$("bankStatus").textContent=e.message}
+}
+async function bankTransactions(){
+ if(!bankConnected||bankBusy)return;
+ bankBusy=true;$("bankSync").disabled=true;
+ $("bankRows").innerHTML='<tr><td colspan="3">Loading bank activity…</td></tr>';
+ $("bankIn").textContent=$("bankOut").textContent="—";
+ try{const d=await api("bank/transactions?month="+encodeURIComponent($("bankMonth").value));let incoming=0,outgoing=0;
+ for(const t of d.transactions){if(!t.pending){if(t.amount_cents<0)incoming-=t.amount_cents;else outgoing+=t.amount_cents}}
+ $("bankIn").textContent=dollars(incoming);$("bankOut").textContent=dollars(outgoing);
+ $("bankRows").innerHTML=d.transactions.length?d.transactions.sort((a,b)=>b.date.localeCompare(a.date)).map(t=>"<tr><td>"+escape(t.date)+"</td><td>"+escape(t.name)+"<div class='sub'>"+escape(t.pending?"Pending":t.category.replaceAll("_"," "))+"</div></td><td>"+(t.amount_cents>0?"−":"+")+dollars(Math.abs(t.amount_cents))+"</td></tr>").join(""):'<tr><td colspan="3">No transactions for this month.</td></tr>';
+ $("bankStatus").textContent="Connected: "+d.label+(d.truncated?" · Results limited; totals incomplete.":" · Latest available bank data.");
+ }catch(e){$("bankRows").innerHTML='<tr><td colspan="3">Bank data unavailable.</td></tr>';$("bankStatus").textContent=e.message==="Plaid: PRODUCT_NOT_READY"?"Plaid is preparing your transactions. Try again in a few minutes.":e.message}
+ finally{bankBusy=false;$("bankSync").disabled=false}
+}
+function loadPlaidLink(){return new Promise((resolve,reject)=>{if(window.Plaid)return resolve();const script=document.createElement("script");script.src="https://cdn.plaid.com/link/v2/stable/link-initialize.js";script.onload=resolve;script.onerror=()=>reject(Error("Unable to load Plaid Link"));document.head.appendChild(script)})}
+$("bankConnect").onclick=async()=>{
+ $("bankConnect").disabled=true;
+ try{await loadPlaidLink();const d=await api("bank/link",{method:"POST",body:"{}"});const handler=window.Plaid.create({token:d.link_token,onSuccess:async(token,metadata)=>{
+ try{const accounts=metadata.accounts||[];if(accounts.length!==1)throw Error("Please select exactly one Capella business checking account.");
+ await api("bank/exchange",{method:"POST",body:JSON.stringify({public_token:token,account_id:accounts[0].id})});await bankStatus()}
+ catch(e){$("bankStatus").textContent=e.message;$("bankConnect").disabled=false}finally{handler.destroy()}
+ },onExit:()=>{$("bankConnect").disabled=false;handler.destroy()}});handler.open()}
+ catch(e){$("bankStatus").textContent=e.message;$("bankConnect").disabled=false}
+};
+$("bankSync").onclick=bankTransactions;
+$("bankMonth").onchange=bankTransactions;
+$("bankDisconnect").onclick=async()=>{if(!confirm("Disconnect the business bank from Capella?"))return;try{await api("bank/disconnect",{method:"POST",body:"{}"});$("bankRows").innerHTML='<tr><td colspan="3">Bank disconnected.</td></tr>';$("bankIn").textContent=$("bankOut").textContent="—";await bankStatus()}catch(e){$("bankStatus").textContent=e.message}};
+bankStatus();
+
 load()})();
