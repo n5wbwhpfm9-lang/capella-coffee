@@ -63,7 +63,7 @@ $("bankMonth").value=monthLocal();
 let bankConnected=false,bankBusy=false;
 async function bankStatus(){
  try{const d=await api("bank/status");bankConnected=d.connected;$("bankConnect").disabled=d.connected;$("bankSync").hidden=!d.connected;$("bankDisconnect").hidden=!d.connected;$("bankStatus").textContent=d.connected?"Connected: "+d.label:"No bank connected.";if(d.connected)await bankTransactions()}
- catch(e){$("bankStatus").textContent=e.message}
+ catch(e){$("bankStatus").textContent="Bank setup: "+e.message+" — tap Connect to retry.";$("bankConnect").disabled=false}
 }
 async function bankTransactions(){
  if(!bankConnected||bankBusy)return;
@@ -78,10 +78,10 @@ async function bankTransactions(){
  }catch(e){$("bankRows").innerHTML='<tr><td colspan="3">Bank data unavailable.</td></tr>';$("bankStatus").textContent=e.message==="Plaid: PRODUCT_NOT_READY"?"Plaid is preparing your transactions. Try again in a few minutes.":e.message}
  finally{bankBusy=false;$("bankSync").disabled=false}
 }
-function loadPlaidLink(){return new Promise((resolve,reject)=>{if(window.Plaid)return resolve();const script=document.createElement("script");script.src="https://cdn.plaid.com/link/v2/stable/link-initialize.js";script.onload=resolve;script.onerror=()=>reject(Error("Unable to load Plaid Link"));document.head.appendChild(script)})}
+function loadPlaidLink(){return new Promise((resolve,reject)=>{if(window.Plaid)return resolve();const script=document.createElement("script");script.src="https://cdn.plaid.com/link/v2/stable/link-initialize.js";script.onload=resolve;script.onerror=()=>reject(Error("Unable to load Plaid Link. Check browser content blockers."));document.head.appendChild(script)})}
 $("bankConnect").onclick=async()=>{
  $("bankConnect").disabled=true;
- try{await loadPlaidLink();const d=await api("bank/link",{method:"POST",body:"{}"});const handler=window.Plaid.create({token:d.link_token,onSuccess:async(token,metadata)=>{
+ try{$("bankStatus").textContent="Preparing secure bank connection…";const d=await api("bank/link",{method:"POST",body:"{}"});await loadPlaidLink();const handler=window.Plaid.create({token:d.link_token,onSuccess:async(token,metadata)=>{
  try{const accounts=metadata.accounts||[];if(accounts.length!==1)throw Error("Please select exactly one Capella business checking account.");
  await api("bank/exchange",{method:"POST",body:JSON.stringify({public_token:token,account_id:accounts[0].id})});await bankStatus()}
  catch(e){$("bankStatus").textContent=e.message;$("bankConnect").disabled=false}finally{handler.destroy()}
