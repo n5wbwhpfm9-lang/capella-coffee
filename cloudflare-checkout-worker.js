@@ -57,10 +57,38 @@ async function savePaidOrder(env, event, details) {
   const statements=[order,...items.map(item=>env.DB.prepare("INSERT INTO order_items (order_id,bag_size_oz,quantity,unit_price_cents,stripe_price_id) VALUES (?,?,?,?,?)").bind(id,item.oz,item.quantity,item.unitPrice,item.priceId)),env.DB.prepare("INSERT OR IGNORE INTO stripe_events(event_id,event_type) VALUES (?,?)").bind(event.id,event.type)];
   await env.DB.batch(statements);
 }
+
+function giftDate(first,index,cadence){
+ const d=new Date(first+"T12:00:00Z");
+ if(cadence==="biweekly")d.setUTCDate(d.getUTCDate()+14*index);
+ else {const day=d.getUTCDate();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+index);const last=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate();d.setUTCDate(Math.min(day,last));d.setUTCDate(d.getUTCDate()+(5-d.getUTCDay()+7)%7)}
+ return d.toISOString().slice(0,10);
+}
+async function saveGift(env,event,session){
+ const m=session.metadata,n=Number(m.gift_count),quantity=Number(m.quantity),oz=m.bag_size==="0.5"?8:16;
+ if(![3,6,12].includes(n)||![1,2].includes(quantity)||!["monthly","biweekly"].includes(m.gift_cadence))throw Error("Invalid gift metadata");
+ const first=nextRoastFriday(event.created),id="gift_"+session.id;
+ const prior=await env.DB.prepare("SELECT id FROM orders WHERE id=?").bind(id+"_1").first();
+ if(!prior){
+ const address=session.collected_information?.shipping_details?.address||session.shipping_details?.address;
+ if(m.delivery==="shipping"&&!address)throw Error("Gift shipping address missing");
+ const statements=[];
+ for(let i=0;i<n;i++){
+ const orderId=id+"_"+(i+1);
+ statements.push(env.DB.prepare("INSERT INTO orders (id,stripe_checkout_session_id,stripe_payment_intent_id,source,customer_name,customer_email,status,delivery_method,shipping_address_json,special_request,roast_window_date,amount_total_cents) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)").bind(orderId,i===0?session.id:null,i===0?session.payment_intent:null,"stripe",m.gift_recipient,session.customer_details?.email,"paid",m.delivery,address?JSON.stringify(address):null,"Gift subscription · "+(i+1)+"/"+n+" · Roast: "+m.roast_preference+(m.gift_message?" · Gift message: "+m.gift_message:""),giftDate(first,i,m.gift_cadence),i===0?session.amount_total:0));
+ statements.push(env.DB.prepare("INSERT INTO order_items (order_id,bag_size_oz,quantity,unit_price_cents,stripe_price_id) VALUES (?,?,?,?,?)").bind(orderId,oz,quantity,oz===8?1200:2000,PRICES[m.bag_size].once));
+ }
+ statements.push(env.DB.prepare("INSERT OR IGNORE INTO stripe_events(event_id,event_type) VALUES (?,?)").bind(event.id,event.type));
+ await env.DB.batch(statements);
+ }
+ await sendOrderConfirmation(env,id+"_1");
+}
+
 async function processStripeEvent(event,env) {
   if (event.type==="checkout.session.completed" && event.data.object.mode==="payment") {
     const session=event.data.object;
     if (session.payment_status!=="paid") return;
+    if(session.metadata?.gift_count){await saveGift(env,event,session);return;}
     const lines=await stripeGet("checkout/sessions/"+encodeURIComponent(session.id)+"/line_items?limit=100",env);
     const items=lines.data.filter(x=>priceSizes[x.price?.id]).map(x=>({oz:priceSizes[x.price.id],quantity:x.quantity,unitPrice:x.price.unit_amount,priceId:x.price.id}));
     const note=session.custom_fields?.find(x=>x.key==="special_request")?.text?.value||null;
@@ -105,10 +133,11 @@ async function sendOrderConfirmation(env, orderId) {
  const itemsHtml=lines.map(x=>"<li>"+escapeHtml(x)+"</li>").join("");
  const pickup=order.delivery_method==="pickup";
  const fulfillment=pickup?"We'll email you when your coffee is ready for pickup in Yakima.":"We'll email you when your coffee has shipped.";
- const greeting=order.customer_name?"Hi "+escapeHtml(order.customer_name.split(" ")[0])+",":"Hello,";
+ const greeting=order.id.startsWith("gift_")?"Hello,":order.customer_name?"Hi "+escapeHtml(order.customer_name.split(" ")[0])+",":"Hello,";
  const money=order.amount_total_cents==null?"":("<p><strong>Amount paid:</strong> $"+(order.amount_total_cents/100).toFixed(2)+"</p>");
+ const giftInfo=order.id.startsWith("gift_")?"<p><strong>Prepaid gift:</strong> "+escapeHtml(order.special_request)+" · Recipient: "+escapeHtml(order.customer_name)+"</p>":"";
  const orderRows=items.map(i=>'<tr><td style="padding:12px 0;font:16px Georgia,serif;color:#382318">'+escapeHtml(i.quantity+' × Ethiopia Yirgacheffe · '+(i.bag_size_oz===16?'1 lb':'½ lb'))+'</td></tr>').join('');
- const html=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f5f1ec;padding:20px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#fffdfb;border-radius:16px"><tr><td align="center" style="padding:32px 28px 12px"><img src="https://copacapella.com/assets/capella-email-logo.png" alt="Capella Coffee Roasters" width="220" style="display:block;max-width:85%;height:auto;color:#b76b50;font:26px Georgia,serif"><div style="border-bottom:1px solid #d9a28f;margin-top:25px"></div></td></tr><tr><td style="padding:18px 32px 28px;font-family:Georgia,serif;color:#382318"><h1 style="text-align:center;font-size:30px;font-weight:normal;line-height:1.2">Your coffee order is confirmed!</h1><p style="font-size:16px;line-height:1.6">${greeting}</p><p style="font-size:16px;line-height:1.6">Thanks for ordering Capella Coffee. We're excited to roast something good for you.</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f2ed;border-radius:12px"><tr><td style="padding:20px 22px"><h2 style="font-size:22px;font-weight:normal;margin:0 0 12px">Your order</h2><table role="presentation" width="100%">${orderRows}<tr><td style="border-top:1px solid #ddc9bd;padding-top:12px"><strong>Amount paid: ${order.amount_total_cents==null?'':('$'+(order.amount_total_cents/100).toFixed(2))}</strong></td></tr></table><p style="font-size:15px"><strong>Delivery:</strong> ${pickup?'Free Yakima pickup':'USPS Priority Mail'}</p></td></tr></table><h2 style="font-size:22px;font-weight:normal;margin:26px 0 8px">Our roasting schedule</h2><p style="font-size:16px;line-height:1.6">We roast fresh coffee in small batches each Friday and Saturday. Orders placed before Friday at 3:00 PM Pacific are scheduled for that week's roasting window. Orders placed at or after the cutoff are scheduled for the following week.</p><p style="font-size:16px;line-height:1.6">${fulfillment}</p><p style="font-size:16px;line-height:1.6">Thanks for supporting our little Yakima roastery!</p><p style="text-align:center;font-size:16px;font-style:italic;margin-top:28px">Questions? Just reply to this email.</p><p style="text-align:center;font:13px Arial,sans-serif;color:#8b6c5c;line-height:1.7">Capella Coffee · Freshly roasted. Yakima born.<br><a href="mailto:hello@copacapella.com" style="color:#aa6049">hello@copacapella.com</a></p></td></tr><tr><td><img src="https://copacapella.com/assets/coffee-cherries-email.png" alt="Coffee cherries" width="580" style="display:block;width:100%;height:auto;opacity:.35;filter:grayscale(1)"></td></tr></table></td></tr></table></body></html>`;
+ const html=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f5f1ec;padding:20px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#fffdfb;border-radius:16px"><tr><td align="center" style="padding:32px 28px 12px"><img src="https://copacapella.com/assets/capella-email-logo.png" alt="Capella Coffee Roasters" width="220" style="display:block;max-width:85%;height:auto;color:#b76b50;font:26px Georgia,serif"><div style="border-bottom:1px solid #d9a28f;margin-top:25px"></div></td></tr><tr><td style="padding:18px 32px 28px;font-family:Georgia,serif;color:#382318"><h1 style="text-align:center;font-size:30px;font-weight:normal;line-height:1.2">Your coffee order is confirmed!</h1><p style="font-size:16px;line-height:1.6">${greeting}</p>${giftInfo}<p style="font-size:16px;line-height:1.6">Thanks for ordering Capella Coffee. We're excited to roast something good for you.</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f2ed;border-radius:12px"><tr><td style="padding:20px 22px"><h2 style="font-size:22px;font-weight:normal;margin:0 0 12px">Your order</h2><table role="presentation" width="100%">${orderRows}<tr><td style="border-top:1px solid #ddc9bd;padding-top:12px"><strong>Amount paid: ${order.amount_total_cents==null?'':('$'+(order.amount_total_cents/100).toFixed(2))}</strong></td></tr></table><p style="font-size:15px"><strong>Delivery:</strong> ${pickup?'Free Yakima pickup':'USPS Priority Mail'}</p></td></tr></table><h2 style="font-size:22px;font-weight:normal;margin:26px 0 8px">Our roasting schedule</h2><p style="font-size:16px;line-height:1.6">We roast fresh coffee in small batches each Friday and Saturday. Orders placed before Friday at 3:00 PM Pacific are scheduled for that week's roasting window. Orders placed at or after the cutoff are scheduled for the following week.</p><p style="font-size:16px;line-height:1.6">${fulfillment}</p><p style="font-size:16px;line-height:1.6">Thanks for supporting our little Yakima roastery!</p><p style="text-align:center;font-size:16px;font-style:italic;margin-top:28px">Questions? Just reply to this email.</p><p style="text-align:center;font:13px Arial,sans-serif;color:#8b6c5c;line-height:1.7">Capella Coffee · Freshly roasted. Yakima born.<br><a href="mailto:hello@copacapella.com" style="color:#aa6049">hello@copacapella.com</a></p></td></tr><tr><td><img src="https://copacapella.com/assets/coffee-cherries-email.png" alt="Coffee cherries" width="580" style="display:block;width:100%;height:auto;opacity:.35;filter:grayscale(1)"></td></tr></table></td></tr></table></body></html>`;
  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json","Idempotency-Key":"capella-confirm-v2-"+orderId},body:JSON.stringify({from:"Capella Coffee <orders@copacapella.com>",to:[order.customer_email],reply_to:"hello@copacapella.com",subject:"Your Capella Coffee order is confirmed!",html})});
  const result=await response.json().catch(()=>({}));
  if(!response.ok) throw Error("Resend email failed ("+response.status+"): "+(result.message||"Unknown error"));
@@ -137,6 +166,8 @@ export default {
   if(!Number.isInteger(quantity)||quantity<1||quantity>2)return json({error:"Invalid bag quantity"},400);
   const price=PRICES[size]?.[frequency];
   if(!price||!["shipping","pickup"].includes(delivery))return json({error:"Invalid purchase selection"},400);
+  const giftCount=Number(input.gift_count||0);
+  if(giftCount&&(![3,6,12].includes(giftCount)||frequency!=="once"||!["monthly","biweekly"].includes(input.gift_cadence)||typeof input.gift_recipient!=="string"||!input.gift_recipient.trim()||input.gift_recipient.length>100||String(input.gift_message||"").length>255))return json({error:"Invalid gift selection"},400);
   const subscription=frequency!=="once";
   const params=new URLSearchParams();
   params.set("mode",subscription?"subscription":"payment");
@@ -165,6 +196,9 @@ export default {
     params.set("subscription_data[metadata][quantity]",String(quantity));
     params.set("subscription_data[metadata][frequency]",frequency);
   }
+  if(giftCount){
+    params.delete("line_items[0][price]");params.set("line_items[0][price_data][currency]","usd");params.set("line_items[0][price_data][unit_amount]",String(((size==="0.5"?1200:2000)*quantity+(delivery==="shipping"?1000:0))*giftCount));params.set("line_items[0][price_data][product_data][name]","Capella prepaid gift — "+giftCount+" deliveries"+(delivery==="shipping"?" (shipping included)":""));params.set("line_items[0][quantity]","1");params.delete("allow_promotion_codes");params.set("payment_method_types[0]","card");params.set("metadata[gift_count]",String(giftCount));params.set("metadata[gift_cadence]",input.gift_cadence);params.set("metadata[gift_recipient]",input.gift_recipient.trim());params.set("metadata[gift_message]",String(input.gift_message||""));
+  }
   if(delivery==="shipping"){
     params.set("shipping_address_collection[allowed_countries][0]","US");
     if(subscription){
@@ -176,7 +210,7 @@ export default {
       params.set("line_items[1][price_data][recurring][interval_count]",frequency==="biweekly"?"2":"1");
       params.set("line_items[1][quantity]","1");
     } else {
-      params.set("shipping_options[0][shipping_rate]",SHIPPING_RATE);
+      if(!giftCount)params.set("shipping_options[0][shipping_rate]",SHIPPING_RATE);
     }
   }
   try{
