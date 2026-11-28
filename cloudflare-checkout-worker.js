@@ -60,14 +60,14 @@ async function savePaidOrder(env, event, details) {
 
 function giftDate(first,index,cadence){
  const d=new Date(first+"T12:00:00Z");
- if(cadence==="biweekly")d.setUTCDate(d.getUTCDate()+14*index);
+ if(cadence==="weekly"||cadence==="biweekly")d.setUTCDate(d.getUTCDate()+(cadence==="weekly"?7:14)*index);
  else {const day=d.getUTCDate();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+index);const last=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate();d.setUTCDate(Math.min(day,last));d.setUTCDate(d.getUTCDate()+(5-d.getUTCDay()+7)%7)}
  return d.toISOString().slice(0,10);
 }
 async function saveGift(env,event,session){
  const m=session.metadata,n=Number(m.gift_count),quantity=Number(m.quantity),oz=m.bag_size==="0.5"?8:16;
- if(![3,6,12].includes(n)||![1,2].includes(quantity)||!["monthly","biweekly"].includes(m.gift_cadence))throw Error("Invalid gift metadata");
- const first=nextRoastFriday(event.created),id="gift_"+session.id;
+ if(!Number.isInteger(n)||n<1||n>24||![1,2].includes(quantity)||!["monthly","biweekly","weekly"].includes(m.gift_cadence))throw Error("Invalid gift metadata");
+ const earliest=nextRoastFriday(event.created),first=m.gift_start&&m.gift_start>earliest?m.gift_start:earliest,id="gift_"+session.id;
  const prior=await env.DB.prepare("SELECT id FROM orders WHERE id=?").bind(id+"_1").first();
  if(!prior){
  const address=session.collected_information?.shipping_details?.address||session.shipping_details?.address;
@@ -155,7 +155,7 @@ export default {
     try {await processStripeEvent(JSON.parse(raw),env);return new Response("ok",{status:200})}
     catch(e){console.error("Stripe webhook processing failed",e);return new Response("Processing failed",{status:500})}
   }
-  if(url.pathname==="/gift-ready"&&request.method==="GET")return json({ready:true});
+  if(url.pathname==="/gift-ready"&&request.method==="GET")return json({ready:true,version:2});
   if(url.pathname!=="/checkout"||request.method!=="POST") return json({error:"Not found"},404);
   if(request.headers.get("Origin")!==SITE) return json({error:"Origin not allowed"},403);
   if(!env.STRIPE_SECRET_KEY) return json({error:"Checkout is not configured"},503);
@@ -167,8 +167,12 @@ export default {
   if(!Number.isInteger(quantity)||quantity<1||quantity>2)return json({error:"Invalid bag quantity"},400);
   const price=PRICES[size]?.[frequency];
   if(!price||!["shipping","pickup"].includes(delivery))return json({error:"Invalid purchase selection"},400);
-  const giftCount=Number(input.gift_count||0);
-  if(giftCount&&(![3,6,12].includes(giftCount)||frequency!=="once"||!["monthly","biweekly"].includes(input.gift_cadence)||typeof input.gift_recipient!=="string"||!input.gift_recipient.trim()||input.gift_recipient.length>100||String(input.gift_message||"").length>255))return json({error:"Invalid gift selection"},400);
+  const months=Number(input.gift_months||0),cadence=input.gift_cadence;
+  const giftCount=months?months*({weekly:4,biweekly:2,monthly:1}[cadence]||0):Number(input.gift_count||0);
+  const giftStart=String(input.gift_start||"");
+  if(months&&(![1,3,6].includes(months)||!giftCount))return json({error:"Invalid gift duration"},400);
+  if(giftStart){const d=new Date(giftStart+"T12:00:00Z");if(!/^\d{4}-\d{2}-\d{2}$/.test(giftStart)||!Number.isFinite(+d)||d.toISOString().slice(0,10)!==giftStart||d.getUTCDay()!==5||giftStart<nextRoastFriday(Date.now()/1000)||+d>Date.now()+366*86400000)return json({error:"Choose an available Friday roast date"},400);}
+  if(giftCount&&(!Number.isInteger(giftCount)||giftCount<1||giftCount>24||frequency!=="once"||!["monthly","biweekly","weekly"].includes(cadence)||typeof input.gift_recipient!=="string"||!input.gift_recipient.trim()||input.gift_recipient.length>100||String(input.gift_message||"").length>255))return json({error:"Invalid gift selection"},400);
   const subscription=frequency!=="once";
   const params=new URLSearchParams();
   params.set("mode",subscription?"subscription":"payment");
@@ -198,7 +202,7 @@ export default {
     params.set("subscription_data[metadata][frequency]",frequency);
   }
   if(giftCount){
-    params.delete("line_items[0][price]");params.set("line_items[0][price_data][currency]","usd");params.set("line_items[0][price_data][unit_amount]",String(((size==="0.5"?1200:2000)*quantity+(delivery==="shipping"?1000:0))*giftCount));params.set("line_items[0][price_data][product_data][name]","Capella prepaid gift — "+giftCount+" deliveries"+(delivery==="shipping"?" (shipping included)":""));params.set("line_items[0][quantity]","1");params.delete("allow_promotion_codes");params.set("payment_method_types[0]","card");params.set("metadata[gift_count]",String(giftCount));params.set("metadata[gift_cadence]",input.gift_cadence);params.set("metadata[gift_recipient]",input.gift_recipient.trim());params.set("metadata[gift_message]",String(input.gift_message||""));
+    params.delete("line_items[0][price]");params.set("line_items[0][price_data][currency]","usd");params.set("line_items[0][price_data][unit_amount]",String(((size==="0.5"?1200:2000)*quantity+(delivery==="shipping"?1000:0))*giftCount));params.set("line_items[0][price_data][product_data][name]","Capella prepaid gift — "+giftCount+" deliveries"+(delivery==="shipping"?" (shipping included)":""));params.set("line_items[0][quantity]","1");params.delete("allow_promotion_codes");params.set("payment_method_types[0]","card");params.set("metadata[gift_count]",String(giftCount));params.set("metadata[gift_start]",giftStart);params.set("metadata[gift_cadence]",input.gift_cadence);params.set("metadata[gift_recipient]",input.gift_recipient.trim());params.set("metadata[gift_message]",String(input.gift_message||""));
   }
   if(delivery==="shipping"){
     params.set("shipping_address_collection[allowed_countries][0]","US");
