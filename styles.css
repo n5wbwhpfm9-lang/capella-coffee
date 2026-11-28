@@ -277,3 +277,20 @@
 .promise{padding-bottom:20px}
 .product-section{padding-top:18px}
 @media(max-width:700px){.promise{padding-bottom:12px}.product-section{padding-top:14px}}
+
+/* Unified ordering controls: warm editorial styling, consistent across browsers. */
+.product-info #frequency,.product-info #giftCount,.product-info #giftRecipient,.product-info #giftMessage{
+ appearance:none;-webkit-appearance:none;display:block;width:100%;min-height:48px;
+ border:1px solid #b8a393;border-radius:5px;background:#fbf6ef;color:var(--ink);
+ font:400 16px/1.45 'DM Sans',sans-serif;padding:12px 14px;
+ box-shadow:none;
+}
+.product-info #frequency,.product-info #giftCount{
+ padding-right:40px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%237c5e4b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;
+}
+.product-info #giftRecipient,.product-info #giftMessage{font:400 16px/1.45 'DM Sans',sans-serif!important;padding:12px 14px!important}
+.product-info #giftMessage{min-height:76px;resize:vertical}
+.product-info #giftDetails .field-label{margin-top:16px;margin-bottom:8px}
+.product-info #giftDetails{padding:4px 0 0}
+.product-info #frequency:focus,.product-info #giftCount:focus,.product-info #giftRecipient:focus,.product-info #giftMessage:focus{outline:2px solid #b75531;outline-offset:2px}
+.product-info .choices{align-items:stretch}.product-info .choices label{display:flex;min-width:0}.product-info .choices span{width:100%;display:flex;align-items:center;justify-content:center;min-height:58px}
