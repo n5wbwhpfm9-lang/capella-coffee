@@ -155,6 +155,7 @@ export default {
     try {await processStripeEvent(JSON.parse(raw),env);return new Response("ok",{status:200})}
     catch(e){console.error("Stripe webhook processing failed",e);return new Response("Processing failed",{status:500})}
   }
+  if(url.pathname==="/gift-ready"&&request.method==="GET")return json({ready:true});
   if(url.pathname!=="/checkout"||request.method!=="POST") return json({error:"Not found"},404);
   if(request.headers.get("Origin")!==SITE) return json({error:"Origin not allowed"},403);
   if(!env.STRIPE_SECRET_KEY) return json({error:"Checkout is not configured"},503);
